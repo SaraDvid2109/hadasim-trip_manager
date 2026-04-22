@@ -3,7 +3,6 @@
     "**/__pycache__": true,
     "**/venv": true,
     "**/*.pyc": true,
-    "**/.env": true,
-    "**/__init__.py": true
+    "**/.env": true
   }
 }
