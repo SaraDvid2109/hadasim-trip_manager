@@ -1,0 +1,12 @@
+# סביבת Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# משתנים סביבתיים — לא מועלים ל-GitHub!
+server/.env
+
+# macOS
+.DS_Store

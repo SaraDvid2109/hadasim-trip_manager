@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מערכת ניהול טיול — רישום</title>
+  <meta name="description" content="מערכת לניהול הטיול השנתי של בנות כיתה ו׳ — רישום מורות ותלמידות" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────────────────────── -->
+<header>
+  <h1>🎒 מערכת ניהול טיול שנתי</h1>
+  <nav>
+    <a href="index.html" class="active">רישום</a>
+    <a href="map.html">מפת איכון</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- ── שורת אימות מורה ─────────────────────────────────────────────── -->
+  <!--
+    מנגנון האבטחה שלנו:
+    מורה מזינה את תעודת הזהות שלה כאן.
+    כל בקשה לשרת תשלח את התעודת זהות הזו ב-Header "X-Teacher-ID".
+    השרת בודק שהיא קיימת ב-DB — אם לא, מחזיר 403 Forbidden.
+  -->
+  <div class="auth-bar" id="authBar">
+    <label for="teacherAuthId">🔑 תעודת זהות מורה (לגישה לנתונים):</label>
+    <input type="text" id="teacherAuthId" maxlength="9" placeholder="000000000" />
+    <button class="btn btn-success" onclick="setTeacherAuth()">אמת</button>
+    <span id="authBadge" class="badge" style="display:none"></span>
+  </div>
+
+  <!-- ── Tabs: בחירה בין רישום מורה / תלמידה ────────────────────────── -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tabTeacher" onclick="switchTab('teacher')">
+      👩‍🏫 רישום מורה
+    </button>
+    <button class="tab-btn" id="tabStudent" onclick="switchTab('student')">
+      👧 רישום תלמידה
+    </button>
+  </div>
+
+  <!-- ── טופס רישום מורה ─────────────────────────────────────────────── -->
+  <div class="card" id="formTeacher">
+    <h2>רישום מורה חדשה</h2>
+    <form id="teacherForm" onsubmit="submitTeacher(event)">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="tFirstName">שם פרטי</label>
+          <input type="text" id="tFirstName" required placeholder="שרה" />
+        </div>
+        <div class="form-group">
+          <label for="tLastName">שם משפחה</label>
+          <input type="text" id="tLastName" required placeholder="לוי" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="tIdNumber">תעודת זהות (9 ספרות)</label>
+          <input type="text" id="tIdNumber" required maxlength="9" placeholder="123456789" pattern="\d{9}" />
+        </div>
+        <div class="form-group">
+          <label for="tClassName">כיתה</label>
+          <input type="text" id="tClassName" required placeholder="ו׳1" />
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">✅ רישום מורה</button>
+    </form>
+    <div class="alert" id="teacherAlert"></div>
+  </div>
+
+  <!-- ── טופס רישום תלמידה ───────────────────────────────────────────── -->
+  <div class="card" id="formStudent" style="display:none">
+    <h2>רישום תלמידה חדשה</h2>
+    <p style="color: var(--muted); font-size:0.9rem; margin-bottom:1rem;">
+      ⚠️ רישום תלמידה מחייב אימות מורה בשורת האימות למעלה.
+    </p>
+    <form id="studentForm" onsubmit="submitStudent(event)">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="sFirstName">שם פרטי</label>
+          <input type="text" id="sFirstName" required placeholder="מיכל" />
+        </div>
+        <div class="form-group">
+          <label for="sLastName">שם משפחה</label>
+          <input type="text" id="sLastName" required placeholder="כהן" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="sIdNumber">תעודת זהות (9 ספרות)</label>
+          <input type="text" id="sIdNumber" required maxlength="9" placeholder="987654321" pattern="\d{9}" />
+        </div>
+        <div class="form-group">
+          <label for="sClassName">כיתה</label>
+          <input type="text" id="sClassName" required placeholder="ו׳1" />
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">✅ רישום תלמידה</button>
+    </form>
+    <div class="alert" id="studentAlert"></div>
+  </div>
+
+</div><!-- /container -->
+
+<script src="js/register.js"></script>
+</body>
+</html>

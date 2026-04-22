@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מערכת ניהול טיול — מפת איכון</title>
+  <meta name="description" content="מפת איכון תלמידות בזמן אמת" />
+
+  <!-- Leaflet.js — ספריית המפות שלנו (חינמית, open source) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <link rel="stylesheet" href="css/style.css" />
+
+  <style>
+    /* עיצוב ספציפי לדף המפה */
+    #map {
+      height: 500px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+      border: 2px solid var(--border);
+    }
+
+    .map-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .update-info {
+      color: var(--muted);
+      font-size: 0.875rem;
+      flex: 1;
+    }
+
+    .student-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .student-card {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .student-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(79,70,229,0.15);
+      transform: translateY(-2px);
+    }
+
+    .student-card.far-alert {
+      border-color: var(--danger);
+      background: #fff5f5;
+    }
+
+    .student-card h4 {
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+
+    .student-card .meta {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .distance-badge {
+      display: inline-block;
+      background: var(--danger);
+      color: white;
+      border-radius: 20px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-top: 0.4rem;
+    }
+
+    .teacher-form {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr) repeat(3, 1fr);
+      gap: 0.75rem;
+      align-items: end;
+    }
+
+    .teacher-form .form-group label { font-size: 0.8rem; }
+
+    /* סטטוס עדכון */
+    #statusDot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🗺️ מפת איכון תלמידות</h1>
+  <nav>
+    <a href="index.html">רישום</a>
+    <a href="map.html" class="active">מפת איכון</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- ── Auth Bar ─────────────────────────────────────────────────────── -->
+  <div class="auth-bar">
+    <label for="mapTeacherId">🔑 תעודת זהות מורה:</label>
+    <input type="text" id="mapTeacherId" maxlength="9" placeholder="000000000" />
+    <button class="btn btn-success" onclick="setMapAuth()">אמת</button>
+    <span id="mapAuthBadge" class="badge" style="display:none"></span>
+  </div>
+
+  <!-- ── המפה ─────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="map-controls">
+      <h2 style="margin-bottom:0">📍 מיקומי תלמידות בזמן אמת</h2>
+      <div class="update-info">
+        <span id="statusDot"></span>
+        <span id="lastUpdate"> מתעדכן...</span>
+      </div>
+      <button class="btn btn-primary" style="width:auto" onclick="loadLocations()">🔄 רענן</button>
+    </div>
+
+    <!-- המפה עצמה — Leaflet יכניס לכאן את אריחי המפה -->
+    <div id="map"></div>
+  </div>
+
+  <!-- ── שלב ג': בדיקת מרחק ────────────────────────────────────────── -->
+  <div class="card">
+    <h2>⚠️ שלב ג' — בדיקת תלמידות שהתרחקו</h2>
+    <p style="color:var(--muted); font-size:0.9rem; margin-bottom:1.2rem">
+      הזיני את מיקומך הנוכחי (DMS) ובדקי מי התרחקה יותר מ-3 ק"מ.
+    </p>
+
+    <div class="teacher-form">
+      <div class="form-group">
+        <label>אורך — מעלות</label>
+        <input type="number" id="tLonDeg" placeholder="34" />
+      </div>
+      <div class="form-group">
+        <label>אורך — דקות</label>
+        <input type="number" id="tLonMin" placeholder="46" />
+      </div>
+      <div class="form-group">
+        <label>אורך — שניות</label>
+        <input type="number" id="tLonSec" placeholder="44" />
+      </div>
+      <div class="form-group">
+        <label>רוחב — מעלות</label>
+        <input type="number" id="tLatDeg" placeholder="32" />
+      </div>
+      <div class="form-group">
+        <label>רוחב — דקות</label>
+        <input type="number" id="tLatMin" placeholder="5" />
+      </div>
+      <div class="form-group">
+        <label>רוחב — שניות</label>
+        <input type="number" id="tLatSec" placeholder="23" />
+      </div>
+    </div>
+    <button class="btn btn-primary" style="max-width:250px; margin-top:1rem" onclick="checkDistance()">
+      🔍 בדוק מרחק
+    </button>
+    <div class="alert" id="distanceAlert"></div>
+
+    <div id="farStudentsContainer" style="margin-top:1.5rem; display:none">
+      <h3 style="color:var(--danger); margin-bottom:1rem">⚠️ תלמידות שהתרחקו:</h3>
+      <div class="student-list" id="farStudentsList"></div>
+    </div>
+  </div>
+
+  <!-- ── רשימת תלמידות על המפה ──────────────────────────────────────── -->
+  <div class="card">
+    <h2>👧 כל התלמידות</h2>
+    <div class="student-list" id="studentList">
+      <p style="color:var(--muted)">טוען נתונים...</p>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script src="js/map.js"></script>
+</body>
+</html>
