@@ -10,7 +10,7 @@ load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 app = Flask(__name__)
 CORS(app)
 
-teacher_positions = {}  # מיקום אחרון של מורה בזיכרון
+teacher_positions = {}
 
 
 def db():
@@ -52,23 +52,15 @@ def validate_id(val):
     return v
 
 
-def parse_dms(obj, max_deg, axis):
-    if not isinstance(obj, dict): raise ValueError(f"{axis} חייב להיות אובייקט")
-    d, m, s = int(str(obj.get("Degrees","")).strip()), int(str(obj.get("Minutes","")).strip()), int(str(obj.get("Seconds","")).strip())
-    if not (0 <= d <= max_deg): raise ValueError(f"{axis} Degrees חייב להיות בין 0 ל-{max_deg}")
-    if not (0 <= m <= 59 and 0 <= s <= 59): raise ValueError(f"{axis} Minutes/Seconds חייבים להיות בין 0 ל-59")
-    return float(d) + m / 60 + s / 3600
-
-
 def parse_coords(coords):
     if not isinstance(coords, dict): raise ValueError("Coordinates לא תקין")
-    return parse_dms(coords.get("Latitude"), 90, "Latitude"), parse_dms(coords.get("Longitude"), 180, "Longitude")
-
-
-def validate_time(ts):
-    if not isinstance(ts, str) or not ts.strip(): raise ValueError("Time חסר")
-    datetime.fromisoformat(ts.strip().replace("Z", "+00:00"))
-    return ts.strip()
+    def dms(obj, max_deg, axis):
+        if not isinstance(obj, dict): raise ValueError(f"{axis} חייב להיות אובייקט")
+        d, m, s = int(str(obj.get("Degrees","")).strip()), int(str(obj.get("Minutes","")).strip()), int(str(obj.get("Seconds","")).strip())
+        if not (0 <= d <= max_deg): raise ValueError(f"{axis} Degrees חייב להיות בין 0 ל-{max_deg}")
+        if not (0 <= m <= 59 and 0 <= s <= 59): raise ValueError(f"{axis} Minutes/Seconds חייבים להיות בין 0 ל-59")
+        return float(d) + m / 60 + s / 3600
+    return dms(coords.get("Latitude"), 90, "Latitude"), dms(coords.get("Longitude"), 180, "Longitude")
 
 
 def haversine(lat1, lon1, lat2, lon2):
@@ -77,13 +69,9 @@ def haversine(lat1, lon1, lat2, lon2):
     return 6371 * 2 * math.asin(math.sqrt(a))
 
 
-def get_tid():
-    return request.headers.get("X-Teacher-ID")
-
-
 def auth_required(fn):
     def wrapper(*args, **kwargs):
-        tid = get_tid()
+        tid = request.headers.get("X-Teacher-ID")
         if not tid or not query("SELECT 1 FROM teachers WHERE id_number=%s", (tid,), one=True):
             return jsonify({"error": "גישה מותרת למורות בלבד"}), 403
         return fn(*args, **kwargs)
@@ -120,11 +108,6 @@ def loc_row(r):
     }
 
 
-@app.route("/")
-def health():
-    return {"status": "ok"}, 200
-
-
 # --- מורות ---
 
 @app.route("/api/teachers", methods=["POST"])
@@ -140,12 +123,6 @@ def register_teacher():
         return jsonify({"message": "המורה נרשמה בהצלחה"}), 201
     except ValueError as e: return jsonify({"error": str(e)}), 400
     except Exception as e: return handle_insert_error(e)
-
-
-@app.route("/api/teachers", methods=["GET"])
-@auth_required
-def get_all_teachers():
-    return jsonify([person_row(r) for r in query("SELECT first_name,last_name,id_number,class_name FROM teachers ORDER BY last_name")])
 
 
 @app.route("/api/teachers/<id_number>", methods=["GET"])
@@ -172,7 +149,7 @@ def register_student():
     try: data = json_body()
     except ValueError as e: return jsonify({"error": str(e)}), 400
 
-    t = query("SELECT class_name FROM teachers WHERE id_number=%s", (get_tid(),), one=True)
+    t = query("SELECT class_name FROM teachers WHERE id_number=%s", (request.headers.get("X-Teacher-ID"),), one=True)
     if not t: return jsonify({"error": "מורה לא נמצאה"}), 404
     teacher_class = t[0]
 
@@ -190,19 +167,6 @@ def register_student():
     except Exception as e: return handle_insert_error(e)
 
 
-@app.route("/api/students", methods=["GET"])
-@auth_required
-def get_all_students():
-    return jsonify([person_row(r) for r in query("SELECT first_name,last_name,id_number,class_name FROM students ORDER BY class_name,last_name")])
-
-
-@app.route("/api/students/<id_number>", methods=["GET"])
-@auth_required
-def get_student(id_number):
-    r = query("SELECT first_name,last_name,id_number,class_name FROM students WHERE id_number=%s", (id_number,), one=True)
-    return jsonify(person_row(r)) if r else (jsonify({"error": "תלמידה לא נמצאה"}), 404)
-
-
 # --- מיקומים ---
 
 @app.route("/api/location", methods=["POST"])
@@ -214,18 +178,19 @@ def receive_location():
         coords = data.get("Coordinates")
         if not isinstance(coords, dict): return jsonify({"error": "Coordinates חסר"}), 400
         t_lat, t_lon = parse_coords(coords)
-        # המרה חזרה ל-DMS לשמירה בטבלה
         def to_dms(v):
-            d = int(v); m_f = (v - d) * 60; m = int(m_f); s = min(59, round((m_f - m) * 60))
-            return d, m, s
+            d = int(v); mf = (v - d) * 60; m = int(mf)
+            return d, m, min(59, round((mf - m) * 60))
         lat_d, lat_m, lat_s = to_dms(t_lat)
         lon_d, lon_m, lon_s = to_dms(t_lon)
-        t = validate_time(data.get("Time"))
+        ts = data.get("Time", "")
+        if not isinstance(ts, str) or not ts.strip(): raise ValueError("Time חסר")
+        datetime.fromisoformat(ts.strip().replace("Z", "+00:00"))
         if not query("SELECT 1 FROM students WHERE id_number=%s", (sid,), one=True):
             return jsonify({"error": "תלמידה לא נמצאה"}), 404
         insert("locations",
                ["student_id_number","lon_degrees","lon_minutes","lon_seconds","lat_degrees","lat_minutes","lat_seconds","recorded_at"],
-               (sid, lon_d, lon_m, lon_s, lat_d, lat_m, lat_s, t))
+               (sid, lon_d, lon_m, lon_s, lat_d, lat_m, lat_s, ts.strip()))
         return jsonify({"message": "מיקום נשמר"}), 201
     except ValueError as e: return jsonify({"error": str(e)}), 400
 
@@ -236,17 +201,17 @@ def get_latest_locations():
     return jsonify([loc_row(r) for r in query(LOCATION_QUERY.format(where=""))])
 
 
-# --- שלב ג': בדיקת מרחק ---
+# --- בדיקת מרחק ---
 
 @app.route("/api/location/teacher/position", methods=["POST"])
 @auth_required
 def update_teacher_position():
     try:
         data = json_body()
-        coords = data.get("Coordinates")
-        t_lat, t_lon = parse_coords(coords)
-        teacher_positions[get_tid()] = {"latitude": t_lat, "longitude": t_lon, "updated_at": datetime.utcnow().isoformat() + "Z"}
-        return jsonify({"message": "מיקום מורה נשמר", "teacher_location": teacher_positions[get_tid()]}), 200
+        t_lat, t_lon = parse_coords(data.get("Coordinates"))
+        tid = request.headers.get("X-Teacher-ID")
+        teacher_positions[tid] = {"latitude": t_lat, "longitude": t_lon, "updated_at": datetime.utcnow().isoformat() + "Z"}
+        return jsonify({"message": "מיקום מורה נשמר", "teacher_location": teacher_positions[tid]}), 200
     except ValueError as e: return jsonify({"error": str(e)}), 400
 
 
@@ -256,7 +221,7 @@ def check_distance():
     try: data = json_body()
     except ValueError as e: return jsonify({"error": str(e)}), 400
 
-    tid = get_tid()
+    tid = request.headers.get("X-Teacher-ID")
     t = query("SELECT class_name FROM teachers WHERE id_number=%s", (tid,), one=True)
     if not t: return jsonify({"error": "מורה לא נמצאה"}), 404
 
