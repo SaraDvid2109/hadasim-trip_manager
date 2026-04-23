@@ -1,423 +1,240 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>מערכת ניהול טיול — מפת איכון</title>
+  <title>מערכת ניהול טיול - מפת איכון</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     :root {
-      --primary: #4f46e5;
-      --primary-dark: #3730a3;
-      --success: #10b981;
-      --danger: #ef4444;
-      --bg: #f1f5f9;
-      --card: #ffffff;
-      --text: #1e293b;
-      --muted: #64748b;
-      --border: #e2e8f0;
-      --radius: 12px;
-      --shadow: 0 4px 24px rgba(0, 0, 0, 0.08)
+      --primary:#4f46e5;
+      --primary-dark:#3730a3;
+      --success:#10b981;
+      --danger:#ef4444;
+      --bg:#f1f5f9;
+      --card:#ffffff;
+      --text:#1e293b;
+      --muted:#64748b;
+      --border:#e2e8f0;
+      --radius:12px;
+      --shadow:0 4px 24px rgba(0,0,0,0.08);
     }
 
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0
-    }
-
+    * { box-sizing:border-box; margin:0; padding:0; }
     body {
-      font-family: 'Heebo', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      direction: rtl;
-      min-height: 100vh
+      font-family:'Heebo',sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
     }
 
     header {
-      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-      color: white;
-      padding: 1rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 2px 12px rgba(79, 70, 229, 0.3)
+      background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+      color:#fff;
+      padding:1rem 1.5rem;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      box-shadow:0 2px 12px rgba(79,70,229,0.3);
     }
 
-    header h1 {
-      font-size: 1.5rem;
-      font-weight: 700
+    header h1 { font-size:1.4rem; font-weight:700; }
+    nav a {
+      color:rgba(255,255,255,0.85);
+      text-decoration:none;
+      margin-right:1rem;
+      font-weight:500;
+    }
+    nav a.active, nav a:hover {
+      color:#fff;
+      text-decoration:underline;
     }
 
-    header nav a {
-      color: rgba(255, 255, 255, 0.85);
-      text-decoration: none;
-      margin-right: 1.5rem;
-      font-weight: 500
-    }
-
-    header nav a:hover,
-    header nav a.active {
-      color: white;
-      text-decoration: underline
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 2rem auto;
-      padding: 0 1.5rem
-    }
-
+    .container { max-width:980px; margin:1.6rem auto; padding:0 1rem; }
     .card {
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 2rem;
-      margin-bottom: 1.5rem
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:1.3rem;
+      margin-bottom:1rem;
     }
 
     .card h2 {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 1.5rem;
-      color: var(--primary);
-      border-bottom: 2px solid var(--border);
-      padding-bottom: 0.75rem
-    }
-
-    .form-group {
-      margin-bottom: 1rem
-    }
-
-    .form-group label {
-      display: block;
-      font-weight: 500;
-      margin-bottom: 0.4rem;
-      font-size: 0.85rem
-    }
-
-    .form-group input {
-      width: 100%;
-      padding: 0.65rem 1rem;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      font-family: 'Heebo', sans-serif;
-      font-size: 1rem;
-      transition: border-color 0.2s
-    }
-
-    .form-group input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15)
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 8px;
-      font-family: 'Heebo', sans-serif;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: white
-    }
-
-    .btn-primary:hover {
-      background: var(--primary-dark);
-      transform: translateY(-1px)
-    }
-
-    .btn-success {
-      background: var(--success);
-      color: white
+      color:var(--primary);
+      font-size:1.12rem;
+      margin-bottom:1rem;
+      padding-bottom:0.6rem;
+      border-bottom:2px solid var(--border);
     }
 
     .alert {
-      padding: 0.85rem 1.2rem;
-      border-radius: 8px;
-      font-weight: 500;
-      margin-top: 1rem;
-      display: none
+      display:none;
+      margin-top:0.8rem;
+      border-radius:8px;
+      padding:0.7rem 1rem;
+      font-weight:500;
+    }
+    .alert.show { display:block; }
+    .alert-success { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
+    .alert-error { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+
+    #loginScreen {
+      min-height:60vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
     }
 
-    .alert.show {
-      display: block;
-      animation: fadeIn 0.3s ease
+    .login-card {
+      width:100%;
+      max-width:430px;
+      background:#fff;
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:2.2rem 1.6rem;
     }
 
-    .alert-success {
-      background: #d1fae5;
-      color: #065f46;
-      border: 1px solid #6ee7b7
+    .login-card h2 { color:var(--primary); margin-bottom:0.45rem; }
+    .login-card p { color:var(--muted); margin-bottom:1rem; }
+
+    .login-card input {
+      width:100%;
+      border:1.5px solid var(--border);
+      border-radius:8px;
+      padding:0.7rem 1rem;
+      text-align:center;
+      font-size:1rem;
+      margin-bottom:0.7rem;
     }
 
-    .alert-error {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fca5a5
+    .btn {
+      border:none;
+      border-radius:8px;
+      padding:0.7rem 1.2rem;
+      font-size:0.96rem;
+      font-weight:600;
+      font-family:'Heebo',sans-serif;
+      cursor:pointer;
     }
+
+    .btn-primary { background:var(--primary); color:#fff; }
+    .btn-primary:hover { background:var(--primary-dark); }
+
+    #loginError { display:none; color:var(--danger); margin-top:0.4rem; font-size:0.9rem; }
 
     .auth-bar {
-      background: white;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1rem 1.5rem;
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      box-shadow: var(--shadow)
-    }
-
-    .auth-bar label {
-      font-weight: 600;
-      white-space: nowrap
-    }
-
-    .auth-bar input {
-      flex: 1;
-      padding: 0.6rem 1rem;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      font-family: 'Heebo', sans-serif;
-      font-size: 0.95rem;
-      direction: ltr
-    }
-
-    .auth-bar input:focus {
-      outline: none;
-      border-color: var(--primary)
+      display:none;
+      align-items:center;
+      gap:0.7rem;
+      background:#fff;
+      border:1.5px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:0.8rem 1rem;
+      margin-bottom:1rem;
+      flex-wrap:wrap;
     }
 
     .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.3rem 0.8rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600
+      border-radius:20px;
+      padding:0.25rem 0.65rem;
+      font-size:0.82rem;
+      font-weight:600;
+      background:#d1fae5;
+      color:#065f46;
     }
 
-    .badge-auth {
-      background: #d1fae5;
-      color: #065f46
-    }
+    .muted { color:var(--muted); font-size:0.9rem; }
 
-    .badge-error {
-      background: #fee2e2;
-      color: #991b1b
-    }
-
+    #mapSection, #distanceSection, #studentsSection { display:none; }
     #map {
-      height: 500px;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      margin-bottom: 1.5rem;
-      border: 2px solid var(--border)
+      height:510px;
+      border-radius:var(--radius);
+      border:2px solid var(--border);
     }
 
-    .map-controls {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 1rem
-    }
-
-    .update-info {
-      color: var(--muted);
-      font-size: 0.875rem;
-      flex: 1
-    }
-
-    #statusDot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      display: inline-block;
-      background: var(--success);
-      animation: pulse 2s infinite
+    .status-dot {
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      background:var(--success);
+      display:inline-block;
+      margin-left:6px;
+      animation:pulse 2s infinite;
     }
 
     @keyframes pulse {
+      0%,100% { opacity:1; }
+      50% { opacity:0.35; }
+    }
 
-      0%,
-      100% {
-        opacity: 1
-      }
+    .distance-controls {
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:0.8rem;
+      margin-bottom:0.5rem;
+    }
 
-      50% {
-        opacity: 0.4
-      }
+    .distance-controls label { font-weight:600; }
+
+    .distance-controls input {
+      width:90px;
+      border:1.5px solid var(--border);
+      border-radius:8px;
+      padding:0.55rem;
+      text-align:center;
+      font-size:1rem;
+      font-family:'Heebo',sans-serif;
     }
 
     .student-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-      gap: 1rem
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+      gap:0.8rem;
     }
 
     .student-card {
-      background: white;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      padding: 1rem;
-      cursor: pointer;
-      transition: all 0.2s
+      border:1.5px solid var(--border);
+      border-radius:10px;
+      background:#fff;
+      padding:0.75rem;
+      cursor:pointer;
+      transition:all .2s;
     }
 
     .student-card:hover {
-      border-color: var(--primary);
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
-      transform: translateY(-2px)
+      transform:translateY(-2px);
+      border-color:var(--primary);
+      box-shadow:0 4px 12px rgba(79,70,229,0.15);
     }
 
-    .student-card.far-alert {
-      border-color: var(--danger);
-      background: #fff5f5
-    }
-
-    .student-card h4 {
-      font-weight: 600;
-      margin-bottom: 0.3rem
-    }
-
-    .student-card .meta {
-      font-size: 0.82rem;
-      color: var(--muted)
-    }
+    .student-card.far-alert { border-color:var(--danger); background:#fff5f5; }
+    .student-card h4 { margin-bottom:0.25rem; }
+    .meta { font-size:0.82rem; color:var(--muted); }
 
     .distance-badge {
-      display: inline-block;
-      background: var(--danger);
-      color: white;
-      border-radius: 20px;
-      padding: 0.2rem 0.6rem;
-      font-size: 0.78rem;
-      font-weight: 600;
-      margin-top: 0.4rem
+      display:inline-block;
+      margin-top:0.4rem;
+      background:var(--danger);
+      color:#fff;
+      border-radius:20px;
+      padding:0.2rem 0.58rem;
+      font-size:0.78rem;
+      font-weight:600;
     }
 
-    .dms-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr) repeat(3, 1fr);
-      gap: 0.75rem;
-      align-items: end
-    }
-
-    .dms-grid .form-group label {
-      font-size: 0.78rem
-    }
-
-    /* קטע המפה ושלב ג' מוסתרים עד אימות */
-    #mapSection,
-    #stageCSection,
-    #studentsSection {
-      display: none
-    }
-
-    /* מסך אימות ראשוני */
-    #loginScreen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 60vh;
-      text-align: center
-    }
-
-    #loginScreen .login-card {
-      background: white;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 3rem 2.5rem;
-      width: 100%;
-      max-width: 420px
-    }
-
-    #loginScreen h2 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--primary);
-      margin-bottom: 0.5rem
-    }
-
-    #loginScreen p {
-      color: var(--muted);
-      margin-bottom: 1.5rem;
-      font-size: 0.95rem
-    }
-
-    #loginScreen input {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      font-family: 'Heebo', sans-serif;
-      font-size: 1.1rem;
-      text-align: center;
-      letter-spacing: 2px;
-      margin-bottom: 1rem
-    }
-
-    #loginScreen input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15)
-    }
-
-    #loginScreen .btn {
-      width: 100%;
-      justify-content: center
-    }
-
-    #loginError {
-      color: var(--danger);
-      font-size: 0.9rem;
-      margin-top: 0.75rem;
-      display: none
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(-5px)
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0)
-      }
-    }
-
-    @media(max-width:600px) {
-      header {
-        flex-direction: column;
-        gap: 0.5rem
-      }
-
-      .dms-grid {
-        grid-template-columns: repeat(3, 1fr)
-      }
+    @media (max-width:640px) {
+      header { flex-direction:column; gap:0.4rem; }
+      .distance-controls { flex-direction:column; align-items:flex-start; }
+      #map { height:430px; }
     }
   </style>
 </head>
-
 <body>
   <header>
     <h1>🗺️ מפת איכון תלמידות</h1>
@@ -428,160 +245,96 @@
   </header>
 
   <div class="container">
-
-    <!-- ── מסך כניסה — מוצג לפני אימות ────────────────────────── -->
-    <div id="loginScreen">
+    <section id="loginScreen">
       <div class="login-card">
         <h2>🔑 כניסה למפת האיכון</h2>
-        <p>גישה מותרת למורות בלבד.<br />הזיני את תעודת הזהות שלך:</p>
-        <input type="text" id="loginId" maxlength="9" placeholder="000000000"
-          oninput="this.value=this.value.replace(/\D/,'')" onkeydown="if(event.key==='Enter')login()" />
-        <button class="btn btn-primary" onclick="login()">🔐 כניסה</button>
+        <p>גישה למורות בלבד. הזיני תעודת זהות:</p>
+        <input type="text" id="loginId" maxlength="9" placeholder="000000000" oninput="this.value=this.value.replace(/\D/g,'')" onkeydown="if(event.key==='Enter') login()" />
+        <button class="btn btn-primary" style="width:100%" onclick="login()">🔐 כניסה</button>
         <div id="loginError"></div>
       </div>
-    </div>
+    </section>
 
-    <!-- ── מוצג רק אחרי אימות מוצלח ──────────────────────────── -->
+    <section class="auth-bar" id="authBarTop">
+      <span>👩‍🏫 מורה מאומתת:</span>
+      <span id="teacherBadge" class="badge"></span>
+      <span id="classBadge" class="muted"></span>
+      <span style="flex:1"></span>
+      <span class="muted"><span class="status-dot"></span><span id="lastUpdate">מחובר</span></span>
+      <button class="btn" style="background:#f1f5f9;color:var(--text);font-size:0.85rem" onclick="logout()">יציאה</button>
+    </section>
 
-    <!-- פס מורה מאומתת -->
-    <div class="auth-bar" id="authBarTop" style="display:none">
-      <label>👩‍🏫 מורה מאומתת:</label>
-      <span id="teacherBadge" class="badge badge-auth"></span>
-      <span id="classBadge" style="color:var(--muted);font-size:0.9rem"></span>
-      <div style="flex:1"></div>
-      <div class="update-info"><span id="statusDot"></span><span id="lastUpdate"> מחובר</span></div>
-      <button class="btn" style="background:#f1f5f9;color:var(--text);padding:0.5rem 1rem;font-size:0.85rem"
-        onclick="logout()">יציאה</button>
-    </div>
+    <section id="mapSection" class="card">
+      <h2>📍 מיקומי תלמידות בזמן אמת</h2>
+      <div id="map"></div>
+    </section>
 
-    <!-- מפה -->
-    <div id="mapSection">
-      <div class="card">
-        <div class="map-controls">
-          <h2 style="margin-bottom:0">📍 מיקומי תלמידות הכיתה בזמן אמת</h2>
-        </div>
-        <div id="map"></div>
+    <section id="distanceSection" class="card">
+      <h2>⚠️ בדיקת תלמידות שהתרחקו</h2>
+      <div class="distance-controls">
+        <label for="thresholdKm">סף מרחק (ק"מ):</label>
+        <input type="number" id="thresholdKm" value="3" min="0.1" step="0.5" />
+        <button class="btn btn-primary" onclick="checkDistance()">🔍 בדוק מרחק</button>
       </div>
-    </div>
-
-    <!-- שלב ג' -->
-    <div id="stageCSection">
-      <div class="card">
-        <h2>⚠️ בדיקת תלמידות שהתרחקו</h2>
-        
-        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-          <div class="form-group" style="margin:0;display:flex;align-items:center;gap:0.75rem">
-            <label for="thresholdKm" style="white-space:nowrap;font-weight:600">📏 סף מרחק (ק"מ):</label>
-            <input type="number" id="thresholdKm" value="3" min="0.1" step="0.5"
-                   style="width:90px;padding:0.6rem;border:1.5px solid var(--border);border-radius:8px;font-family:Heebo,sans-serif;font-size:1rem;text-align:center" />
-          </div>
-          <button class="btn btn-primary" style="width:auto" onclick="checkDistance()">🔍 בדוק מרחק</button>
-        </div>
-        <div class="alert" id="distanceAlert"></div>
-        <div id="farStudentsContainer" style="margin-top:1.5rem;display:none">
-          <h3 style="color:var(--danger);margin-bottom:1rem">⚠️ תלמידות שהתרחקו:</h3>
-          <div class="student-list" id="farStudentsList"></div>
-        </div>
+      <div class="alert" id="distanceAlert"></div>
+      <div id="farStudentsContainer" style="display:none;margin-top:1rem">
+        <h3 style="color:var(--danger);margin-bottom:0.8rem">⚠️ תלמידות שהתרחקו:</h3>
+        <div class="student-list" id="farStudentsList"></div>
       </div>
-    </div>
+    </section>
 
-
-    <!-- רשימת תלמידות -->
-    <div id="studentsSection">
-      <div class="card">
-        <h2>👧 תלמידות הכיתה</h2>
-        <div class="student-list" id="studentList">
-          <p style="color:var(--muted)">טוען...</p>
-        </div>
+    <section id="studentsSection" class="card">
+      <h2>👧 תלמידות הכיתה</h2>
+      <div class="student-list" id="studentList">
+        <p class="meta">טוען...</p>
       </div>
-    </div>
-
-  </div><!-- /container -->
+    </section>
+  </div>
 
   <script>
     const API = "http://localhost:5000";
 
-    // ── מצב גלובלי ───────────────────────────────────────────────────
-    let authId = null;          // ת.ז מורה מאומתת
-    let teacherClass = null;    // שם הכיתה של המורה
-    let teacherStudents = [];   // רשימת תלמידות הכיתה
-    const studentPositions = {}; // סימולציה: מיקום נוכחי לכל תלמידה (decimal degrees)
-    let teacherPosition = { lat: 31.7683, lon: 35.2137 }; // מיקום GPS נוכחי של המורה
-    const markers = {};
+    let authId = null;
+    let teacherClass = null;
+    let teacherStudents = [];
+    let teacherPosition = { lat: 31.7683, lon: 35.2137 };
     let teacherMarker = null;
     let updateInterval = null;
 
-    // ── מפה ──────────────────────────────────────────────────────────
+    const studentPositions = {};
+    const markers = {};
+
     const map = L.map("map").setView([31.7683, 35.2137], 14);
     L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/">CARTO</a>',
-      subdomains: "abcd", maxZoom: 19
+      subdomains: "abcd",
+      maxZoom: 19,
     }).addTo(map);
 
-    // ── כניסה ─────────────────────────────────────────────────────────
-    // שולח GET /api/teachers/<id> עם X-Teacher-ID: <id>
-    // אם 200 → מורה אמיתית; אם 403/404 → לא מורה
-    async function login() {
-      const id = document.getElementById("loginId").value.trim();
-      const errEl = document.getElementById("loginError");
-      errEl.style.display = "none";
-
-      if (!/^\d{9}$/.test(id)) {
-        errEl.textContent = "❌ תעודת זהות חייבת להיות 9 ספרות"; errEl.style.display = "block"; return;
-      }
-
-      try {
-        const res = await fetch(`${API}/api/teachers/${id}`, { headers: { "X-Teacher-ID": id } });
-        if (res.status === 403 || res.status === 404) {
-          errEl.textContent = "❌ תעודת זהות זו אינה רשומה כמורה במערכת"; errEl.style.display = "block"; return;
-        }
-        if (!res.ok) { errEl.textContent = "❌ שגיאת שרת, נסי שנית"; errEl.style.display = "block"; return; }
-
-        const teacher = await res.json();
-        authId = id;
-        teacherClass = teacher.class_name;
-
-        // שליפת תלמידות הכיתה
-        const sRes = await fetch(`${API}/api/teachers/${id}/students`, { headers: { "X-Teacher-ID": id } });
-        const sData = await sRes.json();
-        teacherStudents = sData.students || [];
-
-        // אתחול מיקומי סימולציה
-        initPositions(teacherStudents);
-        initTeacherPosition();
-
-        // הצגת ממשק
-        document.getElementById("loginScreen").style.display = "none";
-        document.getElementById("authBarTop").style.display = "flex";
-        document.getElementById("mapSection").style.display = "block";
-        document.getElementById("stageCSection").style.display = "block";
-        document.getElementById("studentsSection").style.display = "block";
-
-        // חיוני! כשה-div של המפה מוסתר בהתחלה, Leaflet לא יודע את גודל המיקשר.
-        // invalidateSize() מאלץ אותו לחשב מחדש ולטעון את האריחים.
-        setTimeout(() => map.invalidateSize(), 100);
-
-        document.getElementById("teacherBadge").textContent = `✓ ${teacher.first_name} ${teacher.last_name}`;
-        document.getElementById("classBadge").textContent = `| כיתה ${teacherClass}`;
-
-        // התחלת מחזור עדכון אוטומטי
-        if (updateInterval) {
-          clearInterval(updateInterval);
-          updateInterval = null;
-        }
-        await updateCycle();
-        updateInterval = setInterval(updateCycle, 60000); // כל 60 שניות
-
-
-      } catch { errEl.textContent = "❌ שגיאת חיבור לשרת"; errEl.style.display = "block"; }
+    function resetUI() {
+      document.getElementById("loginScreen").style.display = "flex";
+      document.getElementById("authBarTop").style.display = "none";
+      document.getElementById("mapSection").style.display = "none";
+      document.getElementById("distanceSection").style.display = "none";
+      document.getElementById("studentsSection").style.display = "none";
+      document.getElementById("loginError").style.display = "none";
+      document.getElementById("loginId").value = "";
+      document.getElementById("distanceAlert").className = "alert";
+      document.getElementById("farStudentsContainer").style.display = "none";
     }
 
-    function logout() {
-      if (updateInterval) {
-        clearInterval(updateInterval);
-        updateInterval = null;
-      }
+    function openDashboard(teacher) {
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("authBarTop").style.display = "flex";
+      document.getElementById("mapSection").style.display = "block";
+      document.getElementById("distanceSection").style.display = "block";
+      document.getElementById("studentsSection").style.display = "block";
+      document.getElementById("teacherBadge").textContent = `✓ ${teacher.first_name} ${teacher.last_name}`;
+      document.getElementById("classBadge").textContent = `| כיתה ${teacherClass}`;
+      setTimeout(() => map.invalidateSize(), 100);
+    }
 
+    function clearMapMarkers() {
       Object.keys(markers).forEach(id => {
         map.removeLayer(markers[id]);
         delete markers[id];
@@ -590,31 +343,76 @@
         map.removeLayer(teacherMarker);
         teacherMarker = null;
       }
-
-      authId = null; teacherClass = null; teacherStudents = [];
-      document.getElementById("loginScreen").style.display = "flex";
-      document.getElementById("authBarTop").style.display = "none";
-      document.getElementById("mapSection").style.display = "none";
-      document.getElementById("stageCSection").style.display = "none";
-      document.getElementById("studentsSection").style.display = "none";
-      document.getElementById("loginId").value = "";
     }
 
-    // ── סימולטור מיקומים ─────────────────────────────────────────────
-    // ממחיש מכשירי האיכון שמשדרים כל דקה
-    // כל תלמידה מתחילה בנקודה שונה סביב ירושלים ועושה צעד רנדומלי
+    async function login() {
+      const id = document.getElementById("loginId").value.trim();
+      const errorEl = document.getElementById("loginError");
+      errorEl.style.display = "none";
 
-    function initPositions(students) {
-      const BASE_LAT = 31.7683, BASE_LON = 35.2137;
-      students.forEach((s, i) => {
-        if (!studentPositions[s.id_number]) {
-          const angle = (i / Math.max(students.length, 1)) * 2 * Math.PI;
-          const r = 0.005 + Math.random() * 0.008;
-          studentPositions[s.id_number] = {
-            lat: BASE_LAT + r * Math.sin(angle),
-            lon: BASE_LON + r * Math.cos(angle)
-          };
+      if (!/^\d{9}$/.test(id)) {
+        errorEl.textContent = "❌ תעודת זהות חייבת להיות 9 ספרות";
+        errorEl.style.display = "block";
+        return;
+      }
+
+      try {
+        const teacherRes = await fetch(`${API}/api/teachers/${id}`, {
+          headers: { "X-Teacher-ID": id },
+        });
+
+        if (!teacherRes.ok) {
+          errorEl.textContent = "❌ תעודת זהות זו אינה רשומה כמורה";
+          errorEl.style.display = "block";
+          return;
         }
+
+        const teacher = await teacherRes.json();
+        authId = id;
+        teacherClass = teacher.class_name;
+
+        const studentsRes = await fetch(`${API}/api/teachers/${id}/students`, {
+          headers: { "X-Teacher-ID": id },
+        });
+        const studentsData = await studentsRes.json();
+        teacherStudents = studentsData.students || [];
+
+        initPositions();
+        initTeacherPosition();
+        openDashboard(teacher);
+
+        if (updateInterval) clearInterval(updateInterval);
+        await updateCycle();
+        updateInterval = setInterval(updateCycle, 60000);
+      } catch {
+        errorEl.textContent = "❌ שגיאת חיבור לשרת";
+        errorEl.style.display = "block";
+      }
+    }
+
+    function logout() {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+        updateInterval = null;
+      }
+      authId = null;
+      teacherClass = null;
+      teacherStudents = [];
+      clearMapMarkers();
+      resetUI();
+    }
+
+    function initPositions() {
+      const baseLat = 31.7683;
+      const baseLon = 35.2137;
+      teacherStudents.forEach((student, i) => {
+        if (studentPositions[student.id_number]) return;
+        const angle = (i / Math.max(teacherStudents.length, 1)) * Math.PI * 2;
+        const radius = 0.005 + Math.random() * 0.008;
+        studentPositions[student.id_number] = {
+          lat: baseLat + radius * Math.sin(angle),
+          lon: baseLon + radius * Math.cos(angle),
+        };
       });
     }
 
@@ -629,41 +427,16 @@
       teacherPosition = { lat: 31.7683, lon: 35.2137 };
     }
 
-    // המרה מ-Decimal Degrees ל-DMS (לפורמט שה-API מצפה לו)
-    function decToDMS(val) {
-      const abs = Math.abs(val);
-      const d = Math.floor(abs);
-      const mFull = (abs - d) * 60;
-      const m = Math.floor(mFull);
-      const s = Math.min(59, Math.round((mFull - m) * 60));
-      return { Degrees: String(d), Minutes: String(m), Seconds: String(s) };
-    }
-
-    // שולח POST /api/location עבור כל תלמידה עם מיקום חדש (צעד רנדומלי)
-    async function simulateLocations() {
-      for (const s of teacherStudents) {
-        const pos = studentPositions[s.id_number];
-        if (!pos) continue;
-        pos.lat += (Math.random() - 0.5) * 0.002;  // ±~100מ'
-        pos.lon += (Math.random() - 0.5) * 0.002;
-        pos.lat = Math.max(31.72, Math.min(31.83, pos.lat)); // גבולות ירושלים
-        pos.lon = Math.max(35.15, Math.min(35.29, pos.lon));
-        try {
-          await fetch(`${API}/api/location`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ID: parseInt(s.id_number),
-              Coordinates: { Longitude: decToDMS(pos.lon), Latitude: decToDMS(pos.lat) },
-              Time: new Date().toISOString()
-            })
-          });
-        } catch { }
-      }
+    function decToDMS(value) {
+      const abs = Math.abs(value);
+      const degrees = Math.floor(abs);
+      const minutesFloat = (abs - degrees) * 60;
+      const minutes = Math.floor(minutesFloat);
+      const seconds = Math.min(59, Math.round((minutesFloat - minutes) * 60));
+      return { Degrees: String(degrees), Minutes: String(minutes), Seconds: String(seconds) };
     }
 
     async function updateTeacherLocation() {
-      // סימולציית GPS למורה: צעד קטן כל מחזור.
       teacherPosition.lat += (Math.random() - 0.5) * 0.0015;
       teacherPosition.lon += (Math.random() - 0.5) * 0.0015;
       teacherPosition.lat = Math.max(31.72, Math.min(31.83, teacherPosition.lat));
@@ -676,169 +449,203 @@
           body: JSON.stringify({
             Coordinates: {
               Longitude: decToDMS(teacherPosition.lon),
-              Latitude: decToDMS(teacherPosition.lat)
-            }
-          })
+              Latitude: decToDMS(teacherPosition.lat),
+            },
+          }),
         });
-        const r = await res.json();
-        if (res.ok && r.teacher_location) {
-          teacherPosition.lat = r.teacher_location.latitude;
-          teacherPosition.lon = r.teacher_location.longitude;
+
+        const response = await res.json();
+        if (res.ok && response.teacher_location) {
+          teacherPosition.lat = response.teacher_location.latitude;
+          teacherPosition.lon = response.teacher_location.longitude;
         }
-      } catch { }
+      } catch {}
 
       showTeacherMarker(teacherPosition.lat, teacherPosition.lon);
     }
 
-    // ── עדכון מפה ────────────────────────────────────────────────────
-    // שולף מ-GET /api/locations ומסנן לכיתת המורה בלבד
-    async function loadLocations() {
-      if (!authId) return;
-      try {
-        const res = await fetch(`${API}/api/locations`, { headers: { "X-Teacher-ID": authId } });
-        if (!res.ok) return;
-        const all = await res.json();
+    async function simulateStudentLocations() {
+      for (const student of teacherStudents) {
+        const current = studentPositions[student.id_number];
+        if (!current) continue;
 
-        // סינון לתלמידות הכיתה של המורה בלבד
-        const myIds = new Set(teacherStudents.map(s => s.id_number.trim()));
-        const mine = all.filter(loc => myIds.has(loc.id_number.trim()));
+        current.lat += (Math.random() - 0.5) * 0.002;
+        current.lon += (Math.random() - 0.5) * 0.002;
+        current.lat = Math.max(31.72, Math.min(31.83, current.lat));
+        current.lon = Math.max(35.15, Math.min(35.29, current.lon));
 
-        updateMap(mine);
-        updateStudentList(mine);
-        document.getElementById("lastUpdate").textContent =
-          ` עודכן בשעה ${new Date().toLocaleTimeString("he-IL")}`;
-      } catch { }
+        try {
+          await fetch(`${API}/api/location`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ID: parseInt(student.id_number, 10),
+              Coordinates: {
+                Longitude: decToDMS(current.lon),
+                Latitude: decToDMS(current.lat),
+              },
+              Time: new Date().toISOString(),
+            }),
+          });
+        } catch {}
+      }
     }
 
-    // מחזור עדכון שלם: שלח מיקומים → שלוף → עדכן UI
+    async function loadLocations() {
+      if (!authId) return;
+
+      try {
+        const res = await fetch(`${API}/api/locations`, {
+          headers: { "X-Teacher-ID": authId },
+        });
+        if (!res.ok) return;
+
+        const allLocations = await res.json();
+        const ids = new Set(teacherStudents.map(s => s.id_number.trim()));
+        const myClassLocations = allLocations.filter(loc => ids.has(loc.id_number.trim()));
+
+        updateMap(myClassLocations);
+        updateStudentList(myClassLocations);
+        document.getElementById("lastUpdate").textContent = `עודכן בשעה ${new Date().toLocaleTimeString("he-IL")}`;
+      } catch {}
+    }
+
     async function updateCycle() {
       await updateTeacherLocation();
-      await simulateLocations();
+      await simulateStudentLocations();
       await loadLocations();
     }
 
-    // ── Markers ───────────────────────────────────────────────────────
-    function updateMap(students) {
-      students.forEach(s => {
-        const label = `${s.first_name} ${s.last_name}`;
-        const iconHtml = `
-      <div style="background:white;border:2px solid #ef4444;border-radius:6px;padding:3px 8px;
-        font-family:Heebo,sans-serif;font-size:12px;font-weight:600;white-space:nowrap;
-        box-shadow:0 2px 6px rgba(0,0,0,0.2);direction:rtl">${label}</div>
-      <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;
-        border-top:10px solid #ef4444;margin:0 auto"></div>`;
-        if (markers[s.id_number]) {
-          markers[s.id_number].setLatLng([s.latitude, s.longitude]);
-          markers[s.id_number].setPopupContent(popupHtml(s));
-        } else {
-          const m = L.marker([s.latitude, s.longitude], {
-            icon: L.divIcon({ className: "", html: iconHtml, iconAnchor: [40, 40] })
-          }).addTo(map);
-          m.bindPopup(popupHtml(s));
-          markers[s.id_number] = m;
-        }
-      });
-    }
-
-    function popupHtml(s) {
+    function popupHtml(student) {
       return `<div style="direction:rtl;font-family:Heebo,sans-serif;min-width:160px">
-    <strong>${s.first_name} ${s.last_name}</strong><br/>
-    <small>כיתה: ${s.class_name}</small><br/>
-    <small>ת.ז: ${s.id_number}</small><br/>
-    <small>עדכון: ${new Date(s.recorded_at).toLocaleTimeString("he-IL")}</small></div>`;
+        <strong>${student.first_name} ${student.last_name}</strong><br/>
+        <small>כיתה: ${student.class_name}</small><br/>
+        <small>ת.ז: ${student.id_number}</small><br/>
+        <small>עדכון: ${new Date(student.recorded_at).toLocaleTimeString("he-IL")}</small>
+      </div>`;
     }
 
-    function updateStudentList(students) {
-      const c = document.getElementById("studentList");
-      if (!students.length) { c.innerHTML = "<p style='color:var(--muted)'>אין מיקומים זמינים עדיין</p>"; return; }
-      c.innerHTML = students.map(s => `
-    <div class="student-card" onclick="flyTo('${s.id_number}')">
-      <h4>${s.first_name} ${s.last_name}</h4>
-      <div class="meta">כיתה: ${s.class_name} | ת.ז: ${s.id_number}</div>
-      <div class="meta">📍 ${s.latitude.toFixed(4)}, ${s.longitude.toFixed(4)}</div>
-      <div class="meta">🕐 ${new Date(s.recorded_at).toLocaleTimeString("he-IL")}</div>
-    </div>`).join("");
-    }
-
-    function flyTo(id) {
-      const m = markers[id];
-      if (m) { map.flyTo(m.getLatLng(), 16, { animate: true, duration: 1 }); m.openPopup(); }
-    }
-
-    // ── שלב ג' ───────────────────────────────────────────────────────
-    async function checkDistance() {
-      if (!authId) return;
-      
-      const threshold = parseFloat(document.getElementById("thresholdKm").value) || 3.0;
-      if (threshold <= 0) {
-        showDistAlert("סף מרחק חייב להיות גדול מ-0", "error");
-        return;
-      }
-      
-      const payload = {
-        threshold_km: threshold
-      };
-      
-      try {
-        const res = await fetch(`${API}/api/location/teacher`, {
-          method: "POST", 
-          headers: { "Content-Type": "application/json", "X-Teacher-ID": authId }, 
-          body: JSON.stringify(payload)
+    function updateMap(students) {
+      students.forEach(student => {
+        const label = `${student.first_name} ${student.last_name}`;
+        const icon = L.divIcon({
+          className: "",
+          html: `<div style="background:white;border:2px solid #ef4444;border-radius:6px;padding:3px 8px;font-family:Heebo,sans-serif;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2);direction:rtl">${label}</div><div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid #ef4444;margin:0 auto"></div>`,
+          iconAnchor: [40, 40],
         });
-        const r = await res.json();
-        if (!res.ok) { 
-          showDistAlert(r.error || "שגיאה בבדיקת המרחק", "error"); 
-          return; 
+
+        if (markers[student.id_number]) {
+          markers[student.id_number].setLatLng([student.latitude, student.longitude]);
+          markers[student.id_number].setPopupContent(popupHtml(student));
+          return;
         }
-        
-        // הצגת המורה על המפה
-        showTeacherMarker(r.teacher_location.latitude, r.teacher_location.longitude);
-        
-        // הצגת תלמידות שהתרחקו
-        showFarStudents(r.far_students, threshold);
-        
-      } catch (e) {
-        showDistAlert("שגיאת חיבור לשרת", "error");
-      }
+
+        const marker = L.marker([student.latitude, student.longitude], { icon }).addTo(map);
+        marker.bindPopup(popupHtml(student));
+        markers[student.id_number] = marker;
+      });
     }
 
     function showTeacherMarker(lat, lon) {
       const icon = L.divIcon({
-        className: "", html: `
-    <div style="background:#4f46e5;color:white;border-radius:6px;padding:3px 8px;
-      font-family:Heebo,sans-serif;font-size:12px;font-weight:700;white-space:nowrap">👩‍🏫 מורה</div>
-    <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;
-      border-top:10px solid #4f46e5;margin:0 auto"></div>`, iconAnchor: [30, 40]
+        className: "",
+        html: `<div style="background:#4f46e5;color:white;border-radius:6px;padding:3px 8px;font-family:Heebo,sans-serif;font-size:12px;font-weight:700;white-space:nowrap">👩‍🏫 מורה</div><div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid #4f46e5;margin:0 auto"></div>`,
+        iconAnchor: [30, 40],
       });
-      if (teacherMarker) teacherMarker.setLatLng([lat, lon]);
-      else teacherMarker = L.marker([lat, lon], { icon }).addTo(map);
-      map.flyTo([lat, lon], 13);
-    }
 
-    function showFarStudents(far, threshold) {
-      const cont = document.getElementById("farStudentsContainer");
-      const list = document.getElementById("farStudentsList");
-      if (!far.length) { 
-        showDistAlert(`✅ כל התלמידות נמצאות בטווח של ${threshold} ק"מ ממך`, "success"); 
-        cont.style.display = "none"; 
-        return; 
+      if (teacherMarker) {
+        teacherMarker.setLatLng([lat, lon]);
+      } else {
+        teacherMarker = L.marker([lat, lon], { icon }).addTo(map);
       }
-      showDistAlert(`⚠️ נמצאו ${far.length} תלמידות שהתרחקו מעבר ל-${threshold} ק"מ!`, "error");
-      list.innerHTML = far.map(s => `
-    <div class="student-card far-alert" onclick="flyTo('${s.id_number}')">
-      <h4>⚠️ ${s.first_name} ${s.last_name}</h4>
-      <div class="meta">כיתה: ${s.class_name}</div>
-      <span class="distance-badge">${s.distance_km} ק"מ ממך</span>
-    </div>`).join("");
-      cont.style.display = "block";
     }
 
-    function showDistAlert(msg, type) {
-      const el = document.getElementById("distanceAlert");
-      el.textContent = msg; el.className = `alert alert-${type} show`;
-      setTimeout(() => el.className = "alert", 5000);
+    function updateStudentList(students) {
+      const container = document.getElementById("studentList");
+      if (!students.length) {
+        container.innerHTML = '<p class="meta">אין מיקומים זמינים עדיין</p>';
+        return;
+      }
+
+      container.innerHTML = students.map(student => `
+        <div class="student-card" onclick="flyTo('${student.id_number}')">
+          <h4>${student.first_name} ${student.last_name}</h4>
+          <div class="meta">כיתה: ${student.class_name} | ת.ז: ${student.id_number}</div>
+          <div class="meta">📍 ${student.latitude.toFixed(4)}, ${student.longitude.toFixed(4)}</div>
+          <div class="meta">🕐 ${new Date(student.recorded_at).toLocaleTimeString('he-IL')}</div>
+        </div>
+      `).join("");
     }
+
+    function flyTo(studentId) {
+      const marker = markers[studentId];
+      if (!marker) return;
+      map.flyTo(marker.getLatLng(), 16, { animate: true, duration: 1 });
+      marker.openPopup();
+    }
+
+    async function checkDistance() {
+      if (!authId) return;
+
+      const threshold = parseFloat(document.getElementById("thresholdKm").value) || 3;
+      if (threshold <= 0) {
+        showDistAlert("סף מרחק חייב להיות גדול מ-0", "error");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/api/location/teacher`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Teacher-ID": authId },
+          body: JSON.stringify({ threshold_km: threshold }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          showDistAlert(data.error || "שגיאה בבדיקת המרחק", "error");
+          return;
+        }
+
+        if (data.teacher_location) {
+          showTeacherMarker(data.teacher_location.latitude, data.teacher_location.longitude);
+          map.flyTo([data.teacher_location.latitude, data.teacher_location.longitude], 13);
+        }
+
+        showFarStudents(data.far_students || [], threshold);
+      } catch {
+        showDistAlert("שגיאת חיבור לשרת", "error");
+      }
+    }
+
+    function showFarStudents(farStudents, threshold) {
+      const container = document.getElementById("farStudentsContainer");
+      const list = document.getElementById("farStudentsList");
+
+      if (!farStudents.length) {
+        showDistAlert(`✅ כל התלמידות נמצאות בטווח של ${threshold} ק"מ`, "success");
+        container.style.display = "none";
+        return;
+      }
+
+      showDistAlert(`⚠️ נמצאו ${farStudents.length} תלמידות שהתרחקו מעבר ל-${threshold} ק"מ`, "error");
+      list.innerHTML = farStudents.map(student => `
+        <div class="student-card far-alert" onclick="flyTo('${student.id_number}')">
+          <h4>⚠️ ${student.first_name} ${student.last_name}</h4>
+          <div class="meta">כיתה: ${student.class_name}</div>
+          <span class="distance-badge">${student.distance_km} ק"מ</span>
+        </div>
+      `).join("");
+      container.style.display = "block";
+    }
+
+    function showDistAlert(message, type) {
+      const alert = document.getElementById("distanceAlert");
+      alert.textContent = message;
+      alert.className = `alert alert-${type} show`;
+      setTimeout(() => { alert.className = "alert"; }, 5000);
+    }
+
+    resetUI();
   </script>
 </body>
-
 </html>

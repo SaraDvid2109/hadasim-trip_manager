@@ -172,18 +172,30 @@ def register_student():
     tid = request.headers.get("X-Teacher-ID")
     if not tid or not verify_teacher(tid):
         return jsonify({"error": "גישה מותרת למורות בלבד"}), 403
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "גוף הבקשה חייב להיות JSON תקין"}), 400
+
+    teacher_class = get_teacher_class(tid)
+    if not teacher_class:
+        return jsonify({"error": "מורה לא נמצאה"}), 404
+
     for f in ["first_name", "last_name", "id_number", "class_name"]:
         if not str(data.get(f, "")).strip():
             return jsonify({"error": f"שדה חסר: {f}"}), 400
     id_num = str(data["id_number"]).strip()
     if not id_num.isdigit() or len(id_num) != 9:
         return jsonify({"error": "תעודת זהות חייבת להיות 9 ספרות"}), 400
+
+    student_class = str(data["class_name"]).strip()
+    if student_class != teacher_class:
+        return jsonify({"error": f"ניתן לרשום תלמידה רק לכיתה של המורה: {teacher_class}"}), 403
+
     conn = get_connection(); cur = conn.cursor()
     try:
         cur.execute(
             "INSERT INTO students(first_name,last_name,id_number,class_name) VALUES(%s,%s,%s,%s)",
-            (data["first_name"].strip(), data["last_name"].strip(), id_num, data["class_name"].strip())
+            (data["first_name"].strip(), data["last_name"].strip(), id_num, student_class)
         )
         conn.commit()
         return jsonify({"message": "התלמידה נרשמה בהצלחה"}), 201

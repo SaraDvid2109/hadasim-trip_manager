@@ -86,7 +86,7 @@
       <!-- שדה אימות מורה — חלק אינטגרלי מהטופס -->
       <div class="form-group">
         <label for="sTeacherId">🔑 תעודת זהות מורה מאמתת (נדרש לרישום תלמידה)</label>
-        <input type="text" id="sTeacherId" required maxlength="9" placeholder="000000000" pattern="\d{9}" class="auth-field" />
+        <input type="text" id="sTeacherId" required maxlength="9" placeholder="000000000" pattern="\d{9}" class="auth-field" onblur="syncStudentClassFromTeacher()" />
       </div>
       <hr class="divider" />
 
@@ -96,7 +96,7 @@
       </div>
       <div class="form-row">
         <div class="form-group"><label for="sIdNumber">תעודת זהות תלמידה (9 ספרות)</label><input type="text" id="sIdNumber" required maxlength="9" placeholder="987654321" pattern="\d{9}" /></div>
-        <div class="form-group"><label for="sClassName">כיתה</label><input type="text" id="sClassName" required placeholder="ו1" /></div>
+        <div class="form-group"><label for="sClassName">כיתה (אוטומטי לפי המורה)</label><input type="text" id="sClassName" required placeholder="ימולא אוטומטית" readonly /></div>
       </div>
       <button type="submit" class="btn btn-primary">✅ רישום תלמידה</button>
     </form>
@@ -143,11 +143,17 @@ async function submitTeacher(e) {
 async function submitStudent(e) {
   e.preventDefault();
   const tid = document.getElementById("sTeacherId").value.trim();
+  const teacherClass = await syncStudentClassFromTeacher();
+  if (!teacherClass) {
+    showAlert("studentAlert","❌ לא ניתן לאמת מורה או לשלוף כיתה","error");
+    return;
+  }
+
   const data = {
     first_name: document.getElementById("sFirstName").value.trim(),
     last_name:  document.getElementById("sLastName").value.trim(),
     id_number:  document.getElementById("sIdNumber").value.trim(),
-    class_name: document.getElementById("sClassName").value.trim()
+    class_name: teacherClass
   };
   try {
     const res = await fetch(`${API}/api/students`, {
@@ -159,6 +165,30 @@ async function submitStudent(e) {
     if (res.ok) { showAlert("studentAlert","✅ "+r.message,"success"); document.getElementById("studentForm").reset(); }
     else showAlert("studentAlert","❌ "+r.error,"error");
   } catch { showAlert("studentAlert","❌ שגיאת חיבור לשרת","error"); }
+}
+
+async function syncStudentClassFromTeacher() {
+  const tid = document.getElementById("sTeacherId").value.trim();
+  const classInput = document.getElementById("sClassName");
+  classInput.value = "";
+
+  if (!/^\d{9}$/.test(tid)) {
+    return null;
+  }
+
+  try {
+    const res = await fetch(`${API}/api/teachers/${tid}`, {
+      headers: {"X-Teacher-ID": tid}
+    });
+    const r = await res.json();
+    if (!res.ok) {
+      return null;
+    }
+    classInput.value = (r.class_name || "").trim();
+    return classInput.value || null;
+  } catch {
+    return null;
+  }
 }
 </script>
 </body>
