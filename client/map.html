@@ -467,37 +467,7 @@
     <!-- שלב ג' -->
     <div id="stageCSection">
       <div class="card">
-        <h2>⚠️ שלב ג' — בדיקת תלמידות שהתרחקו</h2>
-        <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1.2rem">
-          הזן את מיקום המורה בפורמט DMS, בחר סף מרחק ולחץ על הכפתור לבדיקת התלמידות שהתרחקו.
-        </p>
-
-        <div class="dms-grid" style="margin-bottom:1rem">
-          <div class="form-group">
-            <label for="tLatD">Latitude Degrees</label>
-            <input type="number" id="tLatD" min="0" max="90" value="31" />
-          </div>
-          <div class="form-group">
-            <label for="tLatM">Latitude Minutes</label>
-            <input type="number" id="tLatM" min="0" max="59" value="46" />
-          </div>
-          <div class="form-group">
-            <label for="tLatS">Latitude Seconds</label>
-            <input type="number" id="tLatS" min="0" max="59" value="6" />
-          </div>
-          <div class="form-group">
-            <label for="tLonD">Longitude Degrees</label>
-            <input type="number" id="tLonD" min="0" max="180" value="35" />
-          </div>
-          <div class="form-group">
-            <label for="tLonM">Longitude Minutes</label>
-            <input type="number" id="tLonM" min="0" max="59" value="12" />
-          </div>
-          <div class="form-group">
-            <label for="tLonS">Longitude Seconds</label>
-            <input type="number" id="tLonS" min="0" max="59" value="49" />
-          </div>
-        </div>
+        <h2>⚠️ בדיקת תלמידות שהתרחקו</h2>
         
         <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
           <div class="form-group" style="margin:0;display:flex;align-items:center;gap:0.75rem">
@@ -536,6 +506,7 @@
     let teacherClass = null;    // שם הכיתה של המורה
     let teacherStudents = [];   // רשימת תלמידות הכיתה
     const studentPositions = {}; // סימולציה: מיקום נוכחי לכל תלמידה (decimal degrees)
+    let teacherPosition = { lat: 31.7683, lon: 35.2137 }; // מיקום GPS נוכחי של המורה
     const markers = {};
     let teacherMarker = null;
     let updateInterval = null;
@@ -577,6 +548,7 @@
 
         // אתחול מיקומי סימולציה
         initPositions(teacherStudents);
+        initTeacherPosition();
 
         // הצגת ממשק
         document.getElementById("loginScreen").style.display = "none";
@@ -646,6 +618,17 @@
       });
     }
 
+    function initTeacherPosition() {
+      if (teacherStudents.length) {
+        const first = studentPositions[teacherStudents[0].id_number];
+        if (first) {
+          teacherPosition = { lat: first.lat + 0.001, lon: first.lon + 0.001 };
+          return;
+        }
+      }
+      teacherPosition = { lat: 31.7683, lon: 35.2137 };
+    }
+
     // המרה מ-Decimal Degrees ל-DMS (לפורמט שה-API מצפה לו)
     function decToDMS(val) {
       const abs = Math.abs(val);
@@ -679,6 +662,34 @@
       }
     }
 
+    async function updateTeacherLocation() {
+      // סימולציית GPS למורה: צעד קטן כל מחזור.
+      teacherPosition.lat += (Math.random() - 0.5) * 0.0015;
+      teacherPosition.lon += (Math.random() - 0.5) * 0.0015;
+      teacherPosition.lat = Math.max(31.72, Math.min(31.83, teacherPosition.lat));
+      teacherPosition.lon = Math.max(35.15, Math.min(35.29, teacherPosition.lon));
+
+      try {
+        const res = await fetch(`${API}/api/location/teacher/position`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Teacher-ID": authId },
+          body: JSON.stringify({
+            Coordinates: {
+              Longitude: decToDMS(teacherPosition.lon),
+              Latitude: decToDMS(teacherPosition.lat)
+            }
+          })
+        });
+        const r = await res.json();
+        if (res.ok && r.teacher_location) {
+          teacherPosition.lat = r.teacher_location.latitude;
+          teacherPosition.lon = r.teacher_location.longitude;
+        }
+      } catch { }
+
+      showTeacherMarker(teacherPosition.lat, teacherPosition.lon);
+    }
+
     // ── עדכון מפה ────────────────────────────────────────────────────
     // שולף מ-GET /api/locations ומסנן לכיתת המורה בלבד
     async function loadLocations() {
@@ -701,6 +712,7 @@
 
     // מחזור עדכון שלם: שלח מיקומים → שלוף → עדכן UI
     async function updateCycle() {
+      await updateTeacherLocation();
       await simulateLocations();
       await loadLocations();
     }
@@ -762,15 +774,8 @@
         showDistAlert("סף מרחק חייב להיות גדול מ-0", "error");
         return;
       }
-
-      const teacherDMS = getTeacherLocationDms();
-      if (!teacherDMS) {
-        showDistAlert("מיקום מורה לא תקין. בדוק ערכי Degrees/Minutes/Seconds.", "error");
-        return;
-      }
       
       const payload = {
-        Coordinates: teacherDMS,
         threshold_km: threshold
       };
       
@@ -795,27 +800,6 @@
       } catch (e) {
         showDistAlert("שגיאת חיבור לשרת", "error");
       }
-    }
-
-    function getTeacherLocationDms() {
-      const latD = Number(document.getElementById("tLatD").value);
-      const latM = Number(document.getElementById("tLatM").value);
-      const latS = Number(document.getElementById("tLatS").value);
-      const lonD = Number(document.getElementById("tLonD").value);
-      const lonM = Number(document.getElementById("tLonM").value);
-      const lonS = Number(document.getElementById("tLonS").value);
-
-      if (!Number.isInteger(latD) || latD < 0 || latD > 90) return null;
-      if (!Number.isInteger(latM) || latM < 0 || latM > 59) return null;
-      if (!Number.isInteger(latS) || latS < 0 || latS > 59) return null;
-      if (!Number.isInteger(lonD) || lonD < 0 || lonD > 180) return null;
-      if (!Number.isInteger(lonM) || lonM < 0 || lonM > 59) return null;
-      if (!Number.isInteger(lonS) || lonS < 0 || lonS > 59) return null;
-
-      return {
-        Longitude: { Degrees: String(lonD), Minutes: String(lonM), Seconds: String(lonS) },
-        Latitude: { Degrees: String(latD), Minutes: String(latM), Seconds: String(latS) }
-      };
     }
 
     function showTeacherMarker(lat, lon) {

@@ -16,6 +16,9 @@ load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 app = Flask(__name__)
 CORS(app)
 
+# שמירה בזיכרון של המיקום האחרון למורה לפי ת.ז
+teacher_positions = {}
+
 
 # ── חיבור ל-DB ───────────────────────────────────────────────────────────────
 
@@ -324,16 +327,25 @@ def check_distance():
     except (TypeError, ValueError):
         return jsonify({"error": "threshold_km חייב להיות מספר"}), 400
 
+    # ברירת מחדל: משתמשים במיקום ה-GPS האחרון של המורה שנשלח לשרת.
+    # לתאימות לאחור, אם נשלחו Coordinates בבקשה זו - נשתמש בהם.
     try:
         coordinates = data.get("Coordinates")
-        if not isinstance(coordinates, dict):
-            return jsonify({"error": "Coordinates חסר או לא תקין"}), 400
-        tlon = coordinates.get("Longitude")
-        tlat = coordinates.get("Latitude")
-        t_lon_d, t_lon_m, t_lon_s = parse_dms_triplet(tlon, 180, "Longitude")
-        t_lat_d, t_lat_m, t_lat_s = parse_dms_triplet(tlat, 90, "Latitude")
-        t_lat = dms_to_decimal(t_lat_d, t_lat_m, t_lat_s)
-        t_lon = dms_to_decimal(t_lon_d, t_lon_m, t_lon_s)
+        if coordinates is not None:
+            if not isinstance(coordinates, dict):
+                return jsonify({"error": "Coordinates לא תקין"}), 400
+            tlon = coordinates.get("Longitude")
+            tlat = coordinates.get("Latitude")
+            t_lon_d, t_lon_m, t_lon_s = parse_dms_triplet(tlon, 180, "Longitude")
+            t_lat_d, t_lat_m, t_lat_s = parse_dms_triplet(tlat, 90, "Latitude")
+            t_lat = dms_to_decimal(t_lat_d, t_lat_m, t_lat_s)
+            t_lon = dms_to_decimal(t_lon_d, t_lon_m, t_lon_s)
+        else:
+            last = teacher_positions.get(tid)
+            if not last:
+                return jsonify({"error": "לא התקבל עדיין מיקום GPS למורה"}), 400
+            t_lat = last["latitude"]
+            t_lon = last["longitude"]
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
@@ -368,6 +380,49 @@ def check_distance():
         "far_students": far,
         "threshold_km": threshold_km
     }), 200
+
+
+@app.route("/api/location/teacher/position", methods=["POST"])
+def update_teacher_position():
+    """
+    מקבלת עדכון מיקום GPS של מורה ושומרת את המיקום האחרון שלה בזיכרון.
+    דורש Header: X-Teacher-ID.
+    פורמט הקלט זהה לשליחת מיקום תלמידה (Coordinates ב-DMS).
+    """
+    tid = request.headers.get("X-Teacher-ID")
+    if not tid or not verify_teacher(tid):
+        return jsonify({"error": "גישה מותרת למורות בלבד"}), 403
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "גוף הבקשה חייב להיות JSON תקין"}), 400
+
+    try:
+        coordinates = data.get("Coordinates")
+        if not isinstance(coordinates, dict):
+            return jsonify({"error": "Coordinates חסר או לא תקין"}), 400
+
+        lon = coordinates.get("Longitude")
+        lat = coordinates.get("Latitude")
+        lon_d, lon_m, lon_s = parse_dms_triplet(lon, 180, "Longitude")
+        lat_d, lat_m, lat_s = parse_dms_triplet(lat, 90, "Latitude")
+
+        teacher_positions[tid] = {
+            "latitude": dms_to_decimal(lat_d, lat_m, lat_s),
+            "longitude": dms_to_decimal(lon_d, lon_m, lon_s),
+            "updated_at": datetime.utcnow().isoformat() + "Z",
+        }
+
+        return jsonify({
+            "message": "מיקום מורה נשמר בהצלחה",
+            "teacher_location": {
+                "latitude": teacher_positions[tid]["latitude"],
+                "longitude": teacher_positions[tid]["longitude"],
+                "updated_at": teacher_positions[tid]["updated_at"],
+            },
+        }), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
 
 if __name__ == "__main__":
