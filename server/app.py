@@ -218,8 +218,11 @@ def receive_location():
 def get_latest_locations():
     """
     שליפת המיקום האחרון של כל תלמידה.
-    מחזיר קואורדינטות Decimal Degrees (לאחר המרה מ-DMS).
+    דורש Header: X-Teacher-ID — מורות בלבד.
     """
+    tid = request.headers.get("X-Teacher-ID")
+    if not tid or not verify_teacher(tid):
+        return jsonify({"error": "גישה מותרת למורות בלבד"}), 403
     conn = get_connection(); cur = conn.cursor()
     cur.execute("""
         SELECT DISTINCT ON (l.student_id_number)
@@ -235,7 +238,7 @@ def get_latest_locations():
         "id_number": r[0], "first_name": r[1], "last_name": r[2], "class_name": r[3],
         "longitude": dms_to_decimal(r[4], r[5], r[6]),
         "latitude":  dms_to_decimal(r[7], r[8], r[9]),
-        "recorded_at": r[10].isoformat() if r[10] else None
+        "recorded_at": (r[10].isoformat() + "+00:00") if r[10] else None
     } for r in rows])
 
 
@@ -244,14 +247,19 @@ def get_latest_locations():
 @app.route("/api/location/teacher", methods=["POST"])
 def check_distance():
     """
-    שלב ג' (בונוס): מקבלת מיקום המורה, מחשבת מרחק Haversine לכל תלמידה,
-    ומחזירה תלמידות שמרחקן > 3 ק"מ.
+    שלב ג' (בונוס): מקבלת מיקום המורה + סף מרחק אופציונלי,
+    מחשבת מרחק Haversine לכל תלמידה ומחזירה מי חרגה.
+    עיקרון OCP: הסף מוגדר ע"י הקורא — הקוד סגור לשינוי, פתוח להרחבה.
     דורש Header: X-Teacher-ID.
     """
     tid = request.headers.get("X-Teacher-ID")
     if not tid or not verify_teacher(tid):
         return jsonify({"error": "גישה מותרת למורות בלבד"}), 403
     data = request.get_json()
+
+    # סף המרחק — ניתן להגדרה על ידי הקורא; ברירת מחדל 3 ק"מ (דרישת התרגיל)
+    threshold_km = float(data.get("threshold_km", 3.0))
+
     try:
         tlon = data["Coordinates"]["Longitude"]
         tlat = data["Coordinates"]["Latitude"]
@@ -277,18 +285,18 @@ def check_distance():
         s_lon = dms_to_decimal(r[4], r[5], r[6])
         s_lat = dms_to_decimal(r[7], r[8], r[9])
         d = haversine(t_lat, t_lon, s_lat, s_lon)
-        if d > 3.0:
+        if d > threshold_km:   # <-- משתנה, לא קבוע קשיח
             far.append({
                 "id_number": r[0], "first_name": r[1], "last_name": r[2], "class_name": r[3],
                 "longitude": s_lon, "latitude": s_lat,
                 "distance_km": round(d, 2),
-                "recorded_at": r[10].isoformat() if r[10] else None
+                "recorded_at": (r[10].isoformat() + "+00:00") if r[10] else None
             })
 
     return jsonify({
         "teacher_location": {"latitude": t_lat, "longitude": t_lon},
         "far_students": far,
-        "threshold_km": 3.0
+        "threshold_km": threshold_km
     }), 200
 
 
