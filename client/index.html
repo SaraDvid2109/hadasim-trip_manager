@@ -4,51 +4,42 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>מערכת ניהול טיול — רישום</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --primary:#4f46e5; --primary-dark:#3730a3;
-      --success:#10b981; --danger:#ef4444;
-      --bg:#f1f5f9; --card:#ffffff;
-      --text:#1e293b; --muted:#64748b;
-      --border:#e2e8f0; --radius:12px;
-      --shadow:0 4px 24px rgba(0,0,0,0.08);
-    }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh}
-    header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(79,70,229,0.3)}
-    header h1{font-size:1.5rem;font-weight:700}
-    header nav a{color:rgba(255,255,255,0.85);text-decoration:none;margin-right:1.5rem;font-weight:500}
-    header nav a:hover,header nav a.active{color:white;text-decoration:underline}
-    .container{max-width:900px;margin:2rem auto;padding:0 1.5rem}
-    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:2rem;margin-bottom:1.5rem}
-    .card h2{font-size:1.2rem;font-weight:600;margin-bottom:1.5rem;color:var(--primary);border-bottom:2px solid var(--border);padding-bottom:0.75rem}
-    .tabs{display:flex;gap:0.5rem;margin-bottom:1.5rem}
-    .tab-btn{flex:1;padding:0.75rem;border:2px solid var(--border);background:white;border-radius:8px;cursor:pointer;font-family:'Heebo',sans-serif;font-size:1rem;font-weight:500;color:var(--muted);transition:all 0.2s}
-    .tab-btn.active{background:var(--primary);border-color:var(--primary);color:white}
-    .tab-btn:hover:not(.active){border-color:var(--primary);color:var(--primary)}
-    .form-group{margin-bottom:1.2rem}
-    .form-group label{display:block;font-weight:500;margin-bottom:0.4rem;font-size:0.9rem}
-    .form-group input{width:100%;padding:0.75rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Heebo',sans-serif;font-size:1rem;transition:border-color 0.2s,box-shadow 0.2s;direction:rtl}
-    .form-group input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,0.15)}
-    .form-group input.auth-field{border-color:var(--primary);background:#f5f3ff}
-    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-    .btn{display:inline-flex;align-items:center;gap:0.4rem;padding:0.75rem 1.5rem;border:none;border-radius:8px;font-family:'Heebo',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:all 0.2s}
-    .btn-primary{background:var(--primary);color:white;width:100%;justify-content:center;margin-top:0.5rem}
-    .btn-primary:hover{background:var(--primary-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(79,70,229,0.3)}
-    .alert{padding:0.85rem 1.2rem;border-radius:8px;font-weight:500;margin-top:1rem;display:none}
-    .alert.show{display:block;animation:fadeIn 0.3s ease}
-    .alert-success{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
-    .alert-error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
-    .divider{border:none;border-top:1.5px dashed var(--border);margin:1.2rem 0}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
-    @media(max-width:600px){.form-row{grid-template-columns:1fr};header{flex-direction:column;gap:0.5rem}}
+    :root { --p:#4f46e5; --pd:#3730a3; --bg:#f1f5f9; --card:#fff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0; --r:12px; --sh:0 4px 24px rgba(0,0,0,0.08); }
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Heebo',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+    header { background:linear-gradient(135deg,var(--p),var(--pd)); color:#fff; padding:1rem 2rem; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 12px rgba(79,70,229,0.3); }
+    header h1 { font-size:1.5rem; font-weight:700; }
+    header nav a { color:rgba(255,255,255,0.85); text-decoration:none; margin-right:1.5rem; font-weight:500; }
+    header nav a:hover, header nav a.active { color:#fff; text-decoration:underline; }
+    .container { max-width:900px; margin:2rem auto; padding:0 1.5rem; }
+    .card { background:var(--card); border-radius:var(--r); box-shadow:var(--sh); padding:2rem; margin-bottom:1.5rem; }
+    .card h2 { font-size:1.2rem; font-weight:600; margin-bottom:1.5rem; color:var(--p); border-bottom:2px solid var(--border); padding-bottom:0.75rem; }
+    .tabs { display:flex; gap:0.5rem; margin-bottom:1.5rem; }
+    .tab-btn { flex:1; padding:0.75rem; border:2px solid var(--border); background:#fff; border-radius:8px; cursor:pointer; font-family:'Heebo',sans-serif; font-size:1rem; font-weight:500; color:var(--muted); transition:all 0.2s; }
+    .tab-btn.active { background:var(--p); border-color:var(--p); color:#fff; }
+    .tab-btn:hover:not(.active) { border-color:var(--p); color:var(--p); }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .form-group { margin-bottom:1.2rem; }
+    .form-group label { display:block; font-weight:500; margin-bottom:0.4rem; font-size:0.9rem; }
+    .form-group input { width:100%; padding:0.75rem 1rem; border:1.5px solid var(--border); border-radius:8px; font-family:'Heebo',sans-serif; font-size:1rem; transition:border-color 0.2s,box-shadow 0.2s; }
+    .form-group input:focus { outline:none; border-color:var(--p); box-shadow:0 0 0 3px rgba(79,70,229,0.15); }
+    .form-group input.auth-field { border-color:var(--p); background:#f5f3ff; }
+    .btn-primary { display:block; width:100%; padding:0.75rem; margin-top:0.5rem; border:none; border-radius:8px; background:var(--p); color:#fff; font-family:'Heebo',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+    .btn-primary:hover { background:var(--pd); transform:translateY(-1px); box-shadow:0 4px 12px rgba(79,70,229,0.3); }
+    .divider { border:none; border-top:1.5px dashed var(--border); margin:1.2rem 0; }
+    .alert { padding:0.85rem 1.2rem; border-radius:8px; font-weight:500; margin-top:1rem; display:none; }
+    .alert.show { display:block; animation:fadeIn 0.3s ease; }
+    .alert-success { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
+    .alert-error { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:translateY(0)} }
+    @media(max-width:600px) { .form-row{grid-template-columns:1fr} header{flex-direction:column;gap:0.5rem} }
   </style>
 </head>
 <body>
 <header>
-  <h1>🎒 מערכת ניהול טיול שנתי</h1>
+  <h1>מערכת ניהול טיול שנתי</h1>
   <nav>
     <a href="index.html" class="active">רישום</a>
     <a href="map.html">מפת איכון</a>
@@ -57,48 +48,43 @@
 
 <div class="container">
   <div class="tabs">
-    <button class="tab-btn active" id="tabTeacher" onclick="switchTab('teacher')">👩‍🏫 רישום מורה</button>
-    <button class="tab-btn" id="tabStudent" onclick="switchTab('student')">👧 רישום תלמידה</button>
+    <button class="tab-btn active" id="tabTeacher" onclick="switchTab('teacher')">רישום מורה</button>
+    <button class="tab-btn" id="tabStudent" onclick="switchTab('student')">רישום תלמידה</button>
   </div>
 
-  <!-- טופס מורה — פתוח לכולם, לא דורש אימות -->
   <div class="card" id="formTeacher">
     <h2>רישום מורה חדשה</h2>
-    <form id="teacherForm" onsubmit="submitTeacher(event)">
+    <form onsubmit="submitTeacher(event)">
       <div class="form-row">
-        <div class="form-group"><label for="tFirstName">שם פרטי</label><input type="text" id="tFirstName" required placeholder="שרה" /></div>
-        <div class="form-group"><label for="tLastName">שם משפחה</label><input type="text" id="tLastName" required placeholder="לוי" /></div>
+        <div class="form-group"><label>שם פרטי</label><input id="tFirstName" required placeholder="שרה" /></div>
+        <div class="form-group"><label>שם משפחה</label><input id="tLastName" required placeholder="לוי" /></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label for="tIdNumber">תעודת זהות (9 ספרות)</label><input type="text" id="tIdNumber" required maxlength="9" placeholder="123456789" pattern="\d{9}" /></div>
-        <div class="form-group"><label for="tClassName">כיתה</label><input type="text" id="tClassName" required placeholder="ו1" /></div>
+        <div class="form-group"><label>תעודת זהות (9 ספרות)</label><input id="tIdNumber" required maxlength="9" placeholder="123456789" pattern="\d{9}" /></div>
+        <div class="form-group"><label>כיתה</label><input id="tClassName" required placeholder="ו1" /></div>
       </div>
-      <button type="submit" class="btn btn-primary">✅ רישום מורה</button>
+      <button type="submit" class="btn-primary">רישום מורה</button>
     </form>
     <div class="alert" id="teacherAlert"></div>
   </div>
 
-  <!-- טופס תלמידה — דורש ת.ז מורה בתוך הטופס עצמו -->
   <div class="card" id="formStudent" style="display:none">
     <h2>רישום תלמידה חדשה</h2>
-    <form id="studentForm" onsubmit="submitStudent(event)">
-
-      <!-- שדה אימות מורה — חלק אינטגרלי מהטופס -->
+    <form onsubmit="submitStudent(event)">
       <div class="form-group">
-        <label for="sTeacherId">🔑 תעודת זהות מורה מאמתת (נדרש לרישום תלמידה)</label>
-        <input type="text" id="sTeacherId" required maxlength="9" placeholder="000000000" pattern="\d{9}" class="auth-field" onblur="syncStudentClassFromTeacher()" />
+        <label>תעודת זהות מורה מאמתת</label>
+        <input id="sTeacherId" required maxlength="9" placeholder="000000000" pattern="\d{9}" class="auth-field" onblur="syncClass()" />
       </div>
       <hr class="divider" />
-
       <div class="form-row">
-        <div class="form-group"><label for="sFirstName">שם פרטי</label><input type="text" id="sFirstName" required placeholder="מיכל" /></div>
-        <div class="form-group"><label for="sLastName">שם משפחה</label><input type="text" id="sLastName" required placeholder="כהן" /></div>
+        <div class="form-group"><label>שם פרטי</label><input id="sFirstName" required placeholder="מיכל" /></div>
+        <div class="form-group"><label>שם משפחה</label><input id="sLastName" required placeholder="כהן" /></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label for="sIdNumber">תעודת זהות תלמידה (9 ספרות)</label><input type="text" id="sIdNumber" required maxlength="9" placeholder="987654321" pattern="\d{9}" /></div>
-        <div class="form-group"><label for="sClassName">כיתה (אוטומטי לפי המורה)</label><input type="text" id="sClassName" required placeholder="ימולא אוטומטית" readonly /></div>
+        <div class="form-group"><label>תעודת זהות תלמידה</label><input id="sIdNumber" required maxlength="9" placeholder="987654321" pattern="\d{9}" /></div>
+        <div class="form-group"><label>כיתה (אוטומטי)</label><input id="sClassName" required placeholder="ימולא אוטומטית" readonly /></div>
       </div>
-      <button type="submit" class="btn btn-primary">✅ רישום תלמידה</button>
+      <button type="submit" class="btn-primary">רישום תלמידה</button>
     </form>
     <div class="alert" id="studentAlert"></div>
   </div>
@@ -106,89 +92,57 @@
 
 <script>
 const API = "http://localhost:5000";
+const $ = id => document.getElementById(id);
 
-function switchTab(type) {
-  document.getElementById("formTeacher").style.display = type==="teacher"?"block":"none";
-  document.getElementById("formStudent").style.display  = type==="student"?"block":"none";
-  document.getElementById("tabTeacher").className = "tab-btn"+(type==="teacher"?" active":"");
-  document.getElementById("tabStudent").className  = "tab-btn"+(type==="student"?" active":"");
+function switchTab(t) {
+  $("formTeacher").style.display = t === "teacher" ? "block" : "none";
+  $("formStudent").style.display  = t === "student" ? "block" : "none";
+  $("tabTeacher").className = "tab-btn" + (t === "teacher" ? " active" : "");
+  $("tabStudent").className = "tab-btn" + (t === "student" ? " active" : "");
 }
 
-function showAlert(id, msg, type) {
-  const el = document.getElementById(id);
+function alert(id, msg, type) {
+  const el = $(id);
   el.textContent = msg; el.className = `alert alert-${type} show`;
-  setTimeout(()=>el.className="alert", 4000);
+  setTimeout(() => el.className = "alert", 4000);
 }
 
-// רישום מורה — לא דורש אימות
+async function syncClass() {
+  const tid = $("sTeacherId").value.trim();
+  $("sClassName").value = "";
+  if (!/^\d{9}$/.test(tid)) return null;
+  try {
+    const res = await fetch(`${API}/api/teachers/${tid}`, { headers: { "X-Teacher-ID": tid } });
+    const r = await res.json();
+    if (!res.ok) return null;
+    $("sClassName").value = (r.class_name || "").trim();
+    return $("sClassName").value || null;
+  } catch { return null; }
+}
+
 async function submitTeacher(e) {
   e.preventDefault();
-  const data = {
-    first_name: document.getElementById("tFirstName").value.trim(),
-    last_name:  document.getElementById("tLastName").value.trim(),
-    id_number:  document.getElementById("tIdNumber").value.trim(),
-    class_name: document.getElementById("tClassName").value.trim()
-  };
+  const data = { first_name: $("tFirstName").value.trim(), last_name: $("tLastName").value.trim(), id_number: $("tIdNumber").value.trim(), class_name: $("tClassName").value.trim() };
   try {
-    const res = await fetch(`${API}/api/teachers`, {
-      method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)
-    });
+    const res = await fetch(`${API}/api/teachers`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
     const r = await res.json();
-    if (res.ok) { showAlert("teacherAlert","✅ "+r.message,"success"); document.getElementById("teacherForm").reset(); }
-    else showAlert("teacherAlert","❌ "+r.error,"error");
-  } catch { showAlert("teacherAlert","❌ שגיאת חיבור לשרת","error"); }
+    if (res.ok) { alert("teacherAlert", r.message, "success"); e.target.reset(); }
+    else alert("teacherAlert", r.error, "error");
+  } catch { alert("teacherAlert", "שגיאת חיבור לשרת", "error"); }
 }
 
-// רישום תלמידה — ת.ז מורה נשלחת כ-Header; השרת מוודא שהיא מורה אמיתית
 async function submitStudent(e) {
   e.preventDefault();
-  const tid = document.getElementById("sTeacherId").value.trim();
-  const teacherClass = await syncStudentClassFromTeacher();
-  if (!teacherClass) {
-    showAlert("studentAlert","❌ לא ניתן לאמת מורה או לשלוף כיתה","error");
-    return;
-  }
-
-  const data = {
-    first_name: document.getElementById("sFirstName").value.trim(),
-    last_name:  document.getElementById("sLastName").value.trim(),
-    id_number:  document.getElementById("sIdNumber").value.trim(),
-    class_name: teacherClass
-  };
+  const tid = $("sTeacherId").value.trim();
+  const cls = await syncClass();
+  if (!cls) { alert("studentAlert", "לא ניתן לאמת מורה", "error"); return; }
+  const data = { first_name: $("sFirstName").value.trim(), last_name: $("sLastName").value.trim(), id_number: $("sIdNumber").value.trim(), class_name: cls };
   try {
-    const res = await fetch(`${API}/api/students`, {
-      method:"POST",
-      headers:{"Content-Type":"application/json","X-Teacher-ID":tid},
-      body:JSON.stringify(data)
-    });
+    const res = await fetch(`${API}/api/students`, { method: "POST", headers: { "Content-Type": "application/json", "X-Teacher-ID": tid }, body: JSON.stringify(data) });
     const r = await res.json();
-    if (res.ok) { showAlert("studentAlert","✅ "+r.message,"success"); document.getElementById("studentForm").reset(); }
-    else showAlert("studentAlert","❌ "+r.error,"error");
-  } catch { showAlert("studentAlert","❌ שגיאת חיבור לשרת","error"); }
-}
-
-async function syncStudentClassFromTeacher() {
-  const tid = document.getElementById("sTeacherId").value.trim();
-  const classInput = document.getElementById("sClassName");
-  classInput.value = "";
-
-  if (!/^\d{9}$/.test(tid)) {
-    return null;
-  }
-
-  try {
-    const res = await fetch(`${API}/api/teachers/${tid}`, {
-      headers: {"X-Teacher-ID": tid}
-    });
-    const r = await res.json();
-    if (!res.ok) {
-      return null;
-    }
-    classInput.value = (r.class_name || "").trim();
-    return classInput.value || null;
-  } catch {
-    return null;
-  }
+    if (res.ok) { alert("studentAlert", r.message, "success"); e.target.reset(); }
+    else alert("studentAlert", r.error, "error");
+  } catch { alert("studentAlert", "שגיאת חיבור לשרת", "error"); }
 }
 </script>
 </body>
