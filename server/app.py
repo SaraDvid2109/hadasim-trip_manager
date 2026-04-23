@@ -7,6 +7,7 @@ app.py — מערכת ניהול טיול שנתי
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2, os, math
+from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -40,6 +41,37 @@ def verify_teacher(id_number):
 def dms_to_decimal(d, m, s):
     """ממירה קואורדינטות DMS לעשרוני (Decimal Degrees) — נדרש עבור Leaflet.js."""
     return float(d) + float(m) / 60 + float(s) / 3600
+
+def get_teacher_class(id_number):
+    """מחזירה את כיתת המורה לפי ת.ז, או None אם לא קיימת."""
+    conn = get_connection(); cur = conn.cursor()
+    cur.execute("SELECT class_name FROM teachers WHERE id_number = %s", (id_number,))
+    row = cur.fetchone()
+    cur.close(); conn.close()
+    return row[0] if row else None
+
+def parse_dms_triplet(dms_obj, max_degrees, axis_name):
+    """מפרקת ומוודאת ערכי DMS תקינים."""
+    if not isinstance(dms_obj, dict):
+        raise ValueError(f"{axis_name} חייב להיות אובייקט")
+    d = int(str(dms_obj.get("Degrees", "")).strip())
+    m = int(str(dms_obj.get("Minutes", "")).strip())
+    s = int(str(dms_obj.get("Seconds", "")).strip())
+    if d < 0 or d > max_degrees:
+        raise ValueError(f"{axis_name} Degrees חייב להיות בין 0 ל-{max_degrees}")
+    if m < 0 or m > 59 or s < 0 or s > 59:
+        raise ValueError(f"{axis_name} Minutes/Seconds חייבים להיות בין 0 ל-59")
+    return d, m, s
+
+def validate_iso_utc(ts):
+    """מוודאת שחותמת הזמן בפורמט ISO תקין (כולל Z/UTC)."""
+    if not isinstance(ts, str) or not ts.strip():
+        raise ValueError("Time חסר או לא תקין")
+    cleaned = ts.strip()
+    if cleaned.endswith("Z"):
+        cleaned = cleaned[:-1] + "+00:00"
+    datetime.fromisoformat(cleaned)
+    return ts.strip()
 
 def haversine(lat1, lon1, lat2, lon2):
     """מחשבת מרחק אווירי בק"מ בין שתי נקודות (נוסחת Haversine)."""
@@ -193,25 +225,46 @@ def receive_location():
     קבלת עדכון מיקום ממכשיר האיכון.
     פורמט: { "ID": 9ספרות, "Coordinates": { "Longitude": {D,M,S}, "Latitude": {D,M,S} }, "Time": ISO }
     """
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "גוף הבקשה חייב להיות JSON תקין"}), 400
+
+    conn = None
+    cur = None
     try:
-        sid = str(data["ID"]).zfill(9)
-        lon = data["Coordinates"]["Longitude"]
-        lat = data["Coordinates"]["Latitude"]
+        sid = str(data.get("ID", "")).strip().zfill(9)
+        if not sid.isdigit() or len(sid) != 9:
+            return jsonify({"error": "ID חייב להיות 9 ספרות"}), 400
+
+        coordinates = data.get("Coordinates")
+        if not isinstance(coordinates, dict):
+            return jsonify({"error": "Coordinates חסר או לא תקין"}), 400
+
+        lon_d, lon_m, lon_s = parse_dms_triplet(coordinates.get("Longitude"), 180, "Longitude")
+        lat_d, lat_m, lat_s = parse_dms_triplet(coordinates.get("Latitude"), 90, "Latitude")
+        recorded_time = validate_iso_utc(data.get("Time"))
+
         conn = get_connection(); cur = conn.cursor()
         cur.execute("SELECT 1 FROM students WHERE id_number=%s", (sid,))
         if not cur.fetchone():
-            cur.close(); conn.close()
             return jsonify({"error": "תלמידה לא נמצאה"}), 404
         cur.execute(
             "INSERT INTO locations(student_id_number,lon_degrees,lon_minutes,lon_seconds,lat_degrees,lat_minutes,lat_seconds,recorded_at) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)",
-            (sid, int(lon["Degrees"]), int(lon["Minutes"]), int(lon["Seconds"]),
-             int(lat["Degrees"]), int(lat["Minutes"]), int(lat["Seconds"]), data["Time"])
+            (sid, lon_d, lon_m, lon_s, lat_d, lat_m, lat_s, recorded_time)
         )
-        conn.commit(); cur.close(); conn.close()
+        conn.commit()
         return jsonify({"message": "מיקום נשמר בהצלחה"}), 201
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({"error": str(e)}), 500
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 
 @app.route("/api/locations", methods=["GET"])
@@ -255,18 +308,34 @@ def check_distance():
     tid = request.headers.get("X-Teacher-ID")
     if not tid or not verify_teacher(tid):
         return jsonify({"error": "גישה מותרת למורות בלבד"}), 403
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "גוף הבקשה חייב להיות JSON תקין"}), 400
+
+    class_name = get_teacher_class(tid)
+    if not class_name:
+        return jsonify({"error": "מורה לא נמצאה"}), 404
 
     # סף המרחק — ניתן להגדרה על ידי הקורא; ברירת מחדל 3 ק"מ (דרישת התרגיל)
-    threshold_km = float(data.get("threshold_km", 3.0))
+    try:
+        threshold_km = float(data.get("threshold_km", 3.0))
+        if threshold_km <= 0:
+            return jsonify({"error": "threshold_km חייב להיות גדול מ-0"}), 400
+    except (TypeError, ValueError):
+        return jsonify({"error": "threshold_km חייב להיות מספר"}), 400
 
     try:
-        tlon = data["Coordinates"]["Longitude"]
-        tlat = data["Coordinates"]["Latitude"]
-        t_lat = dms_to_decimal(tlat["Degrees"], tlat["Minutes"], tlat["Seconds"])
-        t_lon = dms_to_decimal(tlon["Degrees"], tlon["Minutes"], tlon["Seconds"])
-    except (KeyError, ValueError):
-        return jsonify({"error": "פורמט מיקום שגוי"}), 400
+        coordinates = data.get("Coordinates")
+        if not isinstance(coordinates, dict):
+            return jsonify({"error": "Coordinates חסר או לא תקין"}), 400
+        tlon = coordinates.get("Longitude")
+        tlat = coordinates.get("Latitude")
+        t_lon_d, t_lon_m, t_lon_s = parse_dms_triplet(tlon, 180, "Longitude")
+        t_lat_d, t_lat_m, t_lat_s = parse_dms_triplet(tlat, 90, "Latitude")
+        t_lat = dms_to_decimal(t_lat_d, t_lat_m, t_lat_s)
+        t_lon = dms_to_decimal(t_lon_d, t_lon_m, t_lon_s)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
     conn = get_connection(); cur = conn.cursor()
     cur.execute("""
@@ -276,8 +345,9 @@ def check_distance():
             l.lat_degrees, l.lat_minutes, l.lat_seconds, l.recorded_at
         FROM locations l
         JOIN students s ON s.id_number = l.student_id_number
+        WHERE s.class_name = %s
         ORDER BY l.student_id_number, l.recorded_at DESC
-    """)
+    """, (class_name,))
     rows = cur.fetchall(); cur.close(); conn.close()
 
     far = []

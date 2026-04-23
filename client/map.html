@@ -469,8 +469,35 @@
       <div class="card">
         <h2>⚠️ שלב ג' — בדיקת תלמידות שהתרחקו</h2>
         <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1.2rem">
-          בחר סף מרחק ולחץ על הכפתור לבדיקת התלמידות שהתרחקו מהמורה. המורה תוצג על המפה לצורך השוואה.
+          הזן את מיקום המורה בפורמט DMS, בחר סף מרחק ולחץ על הכפתור לבדיקת התלמידות שהתרחקו.
         </p>
+
+        <div class="dms-grid" style="margin-bottom:1rem">
+          <div class="form-group">
+            <label for="tLatD">Latitude Degrees</label>
+            <input type="number" id="tLatD" min="0" max="90" value="31" />
+          </div>
+          <div class="form-group">
+            <label for="tLatM">Latitude Minutes</label>
+            <input type="number" id="tLatM" min="0" max="59" value="46" />
+          </div>
+          <div class="form-group">
+            <label for="tLatS">Latitude Seconds</label>
+            <input type="number" id="tLatS" min="0" max="59" value="6" />
+          </div>
+          <div class="form-group">
+            <label for="tLonD">Longitude Degrees</label>
+            <input type="number" id="tLonD" min="0" max="180" value="35" />
+          </div>
+          <div class="form-group">
+            <label for="tLonM">Longitude Minutes</label>
+            <input type="number" id="tLonM" min="0" max="59" value="12" />
+          </div>
+          <div class="form-group">
+            <label for="tLonS">Longitude Seconds</label>
+            <input type="number" id="tLonS" min="0" max="59" value="49" />
+          </div>
+        </div>
         
         <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
           <div class="form-group" style="margin:0;display:flex;align-items:center;gap:0.75rem">
@@ -509,9 +536,9 @@
     let teacherClass = null;    // שם הכיתה של המורה
     let teacherStudents = [];   // רשימת תלמידות הכיתה
     const studentPositions = {}; // סימולציה: מיקום נוכחי לכל תלמידה (decimal degrees)
-    let teacherPosition = { lat: 31.7683, lon: 35.2137 }; // מיקום המורה (מרכז ירושלים כברירת מחדל)
     const markers = {};
     let teacherMarker = null;
+    let updateInterval = null;
 
     // ── מפה ──────────────────────────────────────────────────────────
     const map = L.map("map").setView([31.7683, 35.2137], 14);
@@ -566,14 +593,32 @@
         document.getElementById("classBadge").textContent = `| כיתה ${teacherClass}`;
 
         // התחלת מחזור עדכון אוטומטי
+        if (updateInterval) {
+          clearInterval(updateInterval);
+          updateInterval = null;
+        }
         await updateCycle();
-        setInterval(updateCycle, 60000); // כל 60 שניות
+        updateInterval = setInterval(updateCycle, 60000); // כל 60 שניות
 
 
       } catch { errEl.textContent = "❌ שגיאת חיבור לשרת"; errEl.style.display = "block"; }
     }
 
     function logout() {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+        updateInterval = null;
+      }
+
+      Object.keys(markers).forEach(id => {
+        map.removeLayer(markers[id]);
+        delete markers[id];
+      });
+      if (teacherMarker) {
+        map.removeLayer(teacherMarker);
+        teacherMarker = null;
+      }
+
       authId = null; teacherClass = null; teacherStudents = [];
       document.getElementById("loginScreen").style.display = "flex";
       document.getElementById("authBarTop").style.display = "none";
@@ -713,12 +758,16 @@
       if (!authId) return;
       
       const threshold = parseFloat(document.getElementById("thresholdKm").value) || 3.0;
-      
-      // המרת מיקום המורה ל-DMS
-      const teacherDMS = {
-        Longitude: decToDMS(teacherPosition.lon),
-        Latitude: decToDMS(teacherPosition.lat)
-      };
+      if (threshold <= 0) {
+        showDistAlert("סף מרחק חייב להיות גדול מ-0", "error");
+        return;
+      }
+
+      const teacherDMS = getTeacherLocationDms();
+      if (!teacherDMS) {
+        showDistAlert("מיקום מורה לא תקין. בדוק ערכי Degrees/Minutes/Seconds.", "error");
+        return;
+      }
       
       const payload = {
         Coordinates: teacherDMS,
@@ -746,6 +795,27 @@
       } catch (e) {
         showDistAlert("שגיאת חיבור לשרת", "error");
       }
+    }
+
+    function getTeacherLocationDms() {
+      const latD = Number(document.getElementById("tLatD").value);
+      const latM = Number(document.getElementById("tLatM").value);
+      const latS = Number(document.getElementById("tLatS").value);
+      const lonD = Number(document.getElementById("tLonD").value);
+      const lonM = Number(document.getElementById("tLonM").value);
+      const lonS = Number(document.getElementById("tLonS").value);
+
+      if (!Number.isInteger(latD) || latD < 0 || latD > 90) return null;
+      if (!Number.isInteger(latM) || latM < 0 || latM > 59) return null;
+      if (!Number.isInteger(latS) || latS < 0 || latS > 59) return null;
+      if (!Number.isInteger(lonD) || lonD < 0 || lonD > 180) return null;
+      if (!Number.isInteger(lonM) || lonM < 0 || lonM > 59) return null;
+      if (!Number.isInteger(lonS) || lonS < 0 || lonS > 59) return null;
+
+      return {
+        Longitude: { Degrees: String(lonD), Minutes: String(lonM), Seconds: String(lonS) },
+        Latitude: { Degrees: String(latD), Minutes: String(latM), Seconds: String(latS) }
+      };
     }
 
     function showTeacherMarker(lat, lon) {
