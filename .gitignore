@@ -1,11 +1,11 @@
-# סביבת Python
+# Python environment
 __pycache__/
 *.pyc
 *.pyo
 .venv/
 venv/
 
-# משתנים סביבתיים — לא מועלים ל-GitHub!
+# Environment variables — do NOT commit to GitHub!
 server/.env
 
 # macOS

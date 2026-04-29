@@ -22,27 +22,33 @@ if __name__ == "__main__":
     cur.execute("SELECT 1 FROM pg_database WHERE datname='hadasim_trip'")
     if not cur.fetchone():
         cur.execute("CREATE DATABASE hadasim_trip")
-        print("[OK] Database נוצר")
+        print("[OK] Database created")
     else:
-        print("[INFO] Database כבר קיים")
+        print("[INFO] Database already exists")
     cur.close(); c.close()
 
     run_sql(
         """CREATE TABLE IF NOT EXISTS teachers (
-            id SERIAL PRIMARY KEY, first_name VARCHAR(50) NOT NULL,
-            last_name VARCHAR(50) NOT NULL, id_number CHAR(9) NOT NULL UNIQUE, class_name VARCHAR(20) NOT NULL
+            first_name VARCHAR(50) NOT NULL,
+            last_name  VARCHAR(50) NOT NULL,
+            id_number  CHAR(9) PRIMARY KEY,
+            class_name VARCHAR(20) NOT NULL
         )""",
         """CREATE TABLE IF NOT EXISTS students (
-            id SERIAL PRIMARY KEY, first_name VARCHAR(50) NOT NULL,
-            last_name VARCHAR(50) NOT NULL, id_number CHAR(9) NOT NULL UNIQUE, class_name VARCHAR(20) NOT NULL
+            first_name VARCHAR(50) NOT NULL,
+            last_name  VARCHAR(50) NOT NULL,
+            id_number  CHAR(9) PRIMARY KEY,
+            class_name VARCHAR(20) NOT NULL
         )""",
-        # קואורדינטות נשמרות ב-DMS כפי שמגיעות ממכשיר האיכון
+        # Coordinates stored in DMS as received from the tracking device.
+        # id SERIAL is kept here as PK because locations is a log table with no natural PK.
         """CREATE TABLE IF NOT EXISTS locations (
-            id SERIAL PRIMARY KEY, student_id_number CHAR(9) NOT NULL,
+            id               SERIAL PRIMARY KEY,
+            student_id_number CHAR(9) NOT NULL,
             lon_degrees INTEGER NOT NULL, lon_minutes INTEGER NOT NULL, lon_seconds INTEGER NOT NULL,
             lat_degrees INTEGER NOT NULL, lat_minutes INTEGER NOT NULL, lat_seconds INTEGER NOT NULL,
             recorded_at TIMESTAMP NOT NULL,
             FOREIGN KEY (student_id_number) REFERENCES students(id_number)
         )"""
     )
-    print("[OK] אתחול הושלם")
+    print("[OK] Initialization complete")
