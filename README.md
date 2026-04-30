@@ -80,6 +80,35 @@ start http://localhost:8080/index.html && py -m http.server 8080
 
 ---
 
+## Usage
+
+### Login Screen
+Enter your 9-digit teacher ID to sign in.
+
+<!-- Screenshot: Login screen -->
+![Login Screen](docs/screenshots/login.png)
+
+### Stage A — Registration (`index.html`)
+Register teachers and students. A teacher can only add students to their own class.
+
+| Register Teacher | Register Student |
+|-----------------|-----------------|
+| ![Register Teacher](docs/screenshots/register_teacher.png) | ![Register Student](docs/screenshots/register_student.png) |
+
+### Stage B — Live Map (`map.html`)
+The map displays the latest reported location of every student in the teacher's class. It auto-refreshes every 60 seconds.
+
+<!-- Screenshot: Map with student markers -->
+![Live Map](docs/screenshots/map.png)
+
+### Stage C — Distance Check
+Click the distance-check button on the map screen to highlight students who are farther than the configured threshold (default 3 km).
+
+<!-- Screenshot: Distance check result with highlighted students -->
+![Distance Check](docs/screenshots/distance_check.png)
+
+---
+
 ## Access Control
 
 **All pages require teacher login.** 
