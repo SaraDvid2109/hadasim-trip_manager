@@ -52,7 +52,7 @@ def post_request(endpoint, data, headers=None):
 def dms(t): 
     return {"Degrees": str(t[0]), "Minutes": str(t[1]), "Seconds": str(t[2])}
 
-def log(r, status): 
+def log(status, r): 
     print(f"  {status}: {r.get('message') or r.get('error')}")
 
 if __name__ == "__main__":

@@ -1,13 +1,14 @@
 import psycopg2, os
+from psycopg2 import sql
 from dotenv import load_dotenv
 
 load_dotenv()
 
-def db_connection():
+def db_connection(dbname=None):
     return psycopg2.connect(
         host=os.getenv("DB_HOST"), 
         port=os.getenv("DB_PORT"),
-        dbname=os.getenv("DB_NAME"),
+        dbname=dbname or os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"), 
         password=os.getenv("DB_PASSWORD")
     )
@@ -53,7 +54,7 @@ if __name__ == "__main__":
         with c.cursor() as cur:
             cur.execute("SELECT 1 FROM pg_database WHERE datname=%s", (os.getenv("DB_NAME"),))
             if not cur.fetchone():
-                cur.execute("CREATE DATABASE %s", (os.getenv("DB_NAME"),))
+                cur.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(os.getenv("DB_NAME"))))
                 print("[OK] Database created")
             else:
                 print("[INFO] Database already exists")
