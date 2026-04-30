@@ -9,7 +9,7 @@ A school trip management system for tracking students in real time.
 | Backend  | Python 3.12 + Flask              |
 | Database | PostgreSQL                       |
 | Frontend | HTML + CSS + Vanilla JS          |
-| Map      | Leaflet.js (OpenStreetMap/CARTO) |
+| Map      | Leaflet.js                       |
 
 ---
 
@@ -29,7 +29,7 @@ cd hadasim-trip_manager
 ```bash
 cd server
 python -m venv venv
-venv\Scripts\activate      # Windows
+venv\Scripts\activate      
 pip install -r requirements.txt
 ```
 
@@ -70,21 +70,21 @@ With the server running, in a separate terminal:
 server\venv\Scripts\python.exe scripts\seed_db.py
 ```
 Seeds 3 teachers (classes 6A/6B/6C), 12 students (4 per class), and 12 location entries.  
-Default teacher login IDs: **310310310** (6A), **420420420** (6B), **530530530** (6C)
+Default teacher login IDs: 310310310 (6A), 420420420 (6B), 530530530 (6C)
 
 ### 7. Open the frontend
 ```bash
 cd client
-python -m http.server 8080
+start http://localhost:8080/index.html && py -m http.server 8080
 ```
-Open `http://localhost:8080/index.html` in your browser.
 
 ---
 
 ## Access Control
 
-**All pages require teacher login.** On first load, `index.html` shows a login screen.
-Enter your 9-digit teacher ID — the system validates against the `teachers` table.
+**All pages require teacher login.** 
+On first load, `index.html` shows a login screen.
+Enter your 9-digit teacher ID - the system validates against the `teachers` table.
 After login, the session is stored in `sessionStorage` and shared with `map.html`.
 Navigating to `map.html` without a session redirects back to the login screen.
 
@@ -130,7 +130,7 @@ Coordinates are stored in DMS format (degrees, minutes, seconds) as separate int
 | POST | `/api/location/teacher/position` | Update teacher GPS (stored in memory) | Teacher |
 | POST | `/api/location/teacher` | Distance check (Stage C) | Teacher |
 
-#### `/api/location` — Request body
+#### `/api/location` - Request body
 ```json
 {
   "ID": "123456789",
@@ -142,7 +142,7 @@ Coordinates are stored in DMS format (degrees, minutes, seconds) as separate int
 }
 ```
 
-#### `/api/location/teacher` — Request body
+#### `/api/location/teacher` - Request body
 ```json
 {
   "threshold_km": 3.0,
@@ -152,21 +152,21 @@ Coordinates are stored in DMS format (degrees, minutes, seconds) as separate int
   }
 }
 ```
-`Coordinates` is optional — if omitted, the server uses the last position stored via `/api/location/teacher/position`.  
+`Coordinates` is optional - if omitted, the server uses the last position stored via `/api/location/teacher/position`.  
 `threshold_km` defaults to `3.0` if not provided.
 
 ---
 
 ## Stages
 
-- **Stage A** — Teacher & student registration via `index.html`
-- **Stage B** — Real-time tracking map via `map.html` (auto-refreshes every 60s)
-- **Stage C (Bonus)** — Haversine distance check; highlights students beyond a configurable threshold (default 3 km)
+- **Stage A**: Teacher & student registration via `index.html`
+- **Stage B**: Real-time tracking map via `map.html` (auto-refreshes every 60s)
+- **Stage C (Bonus)**: Haversine distance check, highlights students beyond a configurable threshold (default 3 km)
 
 ---
 
 ## Assumptions
-1. **Auth**: Header-based (`X-Teacher-ID`) + `sessionStorage` — intended for internal use only.
+1. **Auth**: Header-based (`X-Teacher-ID`) + `sessionStorage` - intended for internal use only.
 2. **Coordinates**: All coordinates are positive (Israel is N/E).
-3. **Teacher location**: Stored in server memory (`teacher_positions` dict); resets on server restart.
+3. **Teacher location**: Stored in server memory (`teacher_positions` dict), resets on server restart.
 4. **Class restriction**: A teacher can only register students to their own class.
