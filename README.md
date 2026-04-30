@@ -34,7 +34,7 @@ pip install -r requirements.txt
 ```
 
 ### 3. Configure environment
-Edit `server/.env`:
+Edit `.env` (project root):
 ```
 DB_HOST=localhost
 DB_PORT=5432
@@ -69,8 +69,8 @@ With the server running, in a separate terminal:
 ```bash
 server\venv\Scripts\python.exe scripts\seed_db.py
 ```
-Seeds 3 teachers (classes 6A/6B/6C), 12 students, and 12 locations.  
-Default teacher login ID: **310310310**
+Seeds 3 teachers (classes 6A/6B/6C), 12 students (4 per class), and 12 location entries.  
+Default teacher login IDs: **310310310** (6A), **420420420** (6B), **530530530** (6C)
 
 ### 7. Open the frontend
 ```bash
@@ -104,6 +104,8 @@ Protected API endpoints require the header: `X-Teacher-ID: <id_number>`
 
 A teacher can only register students into their own class (`class_name` must match).
 
+Coordinates are stored in DMS format (degrees, minutes, seconds) as separate integer columns and converted to decimal degrees on read.
+
 ---
 
 ## API Endpoints
@@ -118,15 +120,40 @@ A teacher can only register students into their own class (`class_name` must mat
 ### Students
 | Method | Route | Description | Auth |
 |--------|-------|-------------|------|
-| POST | `/api/students` | Register a student | Teacher |
+| POST | `/api/students` | Register a student (class-restricted) | Teacher |
 
 ### Locations
 | Method | Route | Description | Auth |
 |--------|-------|-------------|------|
 | POST | `/api/location` | Submit student location | No |
-| GET | `/api/locations` | Latest location per student | Teacher |
-| POST | `/api/location/teacher/position` | Update teacher GPS | Teacher |
+| GET | `/api/locations` | Latest location per student (all classes) | Teacher |
+| POST | `/api/location/teacher/position` | Update teacher GPS (stored in memory) | Teacher |
 | POST | `/api/location/teacher` | Distance check (Stage C) | Teacher |
+
+#### `/api/location` — Request body
+```json
+{
+  "ID": "123456789",
+  "Coordinates": {
+    "Latitude":  { "Degrees": "31", "Minutes": "46", "Seconds": "28" },
+    "Longitude": { "Degrees": "35", "Minutes": "14", "Seconds": "3"  }
+  },
+  "Time": "2026-04-22T08:00:00Z"
+}
+```
+
+#### `/api/location/teacher` — Request body
+```json
+{
+  "threshold_km": 3.0,
+  "Coordinates": {
+    "Latitude":  { "Degrees": "31", "Minutes": "46", "Seconds": "0" },
+    "Longitude": { "Degrees": "35", "Minutes": "14", "Seconds": "0" }
+  }
+}
+```
+`Coordinates` is optional — if omitted, the server uses the last position stored via `/api/location/teacher/position`.  
+`threshold_km` defaults to `3.0` if not provided.
 
 ---
 
@@ -134,12 +161,12 @@ A teacher can only register students into their own class (`class_name` must mat
 
 - **Stage A** — Teacher & student registration via `index.html`
 - **Stage B** — Real-time tracking map via `map.html` (auto-refreshes every 60s)
-- **Stage C (Bonus)** — Haversine distance check; highlights students beyond the threshold
+- **Stage C (Bonus)** — Haversine distance check; highlights students beyond a configurable threshold (default 3 km)
 
 ---
 
 ## Assumptions
 1. **Auth**: Header-based (`X-Teacher-ID`) + `sessionStorage` — intended for internal use only.
 2. **Coordinates**: All coordinates are positive (Israel is N/E).
-3. **Teacher location**: Simulated automatically on the map screen.
+3. **Teacher location**: Stored in server memory (`teacher_positions` dict); resets on server restart.
 4. **Class restriction**: A teacher can only register students to their own class.
