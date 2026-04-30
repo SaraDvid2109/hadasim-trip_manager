@@ -2,6 +2,19 @@
 
 A school trip management system for tracking students in real time.
 
+## Table of Contents
+
+- [Tech Stack](#tech-stack)
+- [Setup](#setup)
+- [Usage](#usage)
+- [Access Control](#access-control)
+- [Database Schema](#database-schema)
+- [API Endpoints](#api-endpoints)
+- [Stages](#stages)
+- [Assumptions](#assumptions)
+
+---
+
 ## Tech Stack
 
 | Layer    | Technology                       |
