@@ -99,36 +99,37 @@ start http://localhost:8080/index.html && py -m http.server 8080
 Enter your 9-digit teacher ID to sign in.
 
 <!-- Screenshot: Login screen -->
-![Login Screen](docs/screenshots/login.png)
+<img width="1914" height="866" alt="image" src="https://github.com/user-attachments/assets/af94c1cc-3978-4189-b7ab-e99d5a9a2a88" />
 
-### Stage A — Registration (`index.html`)
+### Stage A — Registration (index.html)
 Register teachers and students. A teacher can only add students to their own class.
 
 | Register Teacher | Register Student |
 |-----------------|-----------------|
-| ![Register Teacher](docs/screenshots/register_teacher.png) | ![Register Student](docs/screenshots/register_student.png) |
+| <img width="1917" height="865" alt="image" src="https://github.com/user-attachments/assets/6def7f52-bacf-4cc4-9edc-0c93640eaeff" />| <img width="1918" height="874" alt="image" src="https://github.com/user-attachments/assets/7e9b72cb-727e-4db3-a657-fef111463077" />|
 
-### Stage B — Live Map (`map.html`)
+### Stage B — Live Map (map.html)
 The map displays the latest reported location of every student in the teacher's class. It auto-refreshes every 60 seconds.
 
 <!-- Screenshot: Map with student markers -->
-![Live Map](docs/screenshots/map.png)
+<img width="1913" height="867" alt="image" src="https://github.com/user-attachments/assets/3de87dbf-3bba-4053-8a66-a3e665ddea40" />
+
 
 ### Stage C — Distance Check
 Click the distance-check button on the map screen to highlight students who are farther than the configured threshold (default 3 km).
 
 <!-- Screenshot: Distance check result with highlighted students -->
-![Distance Check](docs/screenshots/distance_check.png)
+<img width="1915" height="869" alt="image" src="https://github.com/user-attachments/assets/0b5a4801-2c99-451f-b127-fd0e88e63fb1" />
 
 ---
 
 ## Access Control
 
 **All pages require teacher login.** 
-On first load, `index.html` shows a login screen.
-Enter your 9-digit teacher ID - the system validates against the `teachers` table.
-After login, the session is stored in `sessionStorage` and shared with `map.html`.
-Navigating to `map.html` without a session redirects back to the login screen.
+On first load, index.html shows a login screen.
+Enter your 9-digit teacher ID - the system validates against the teachers table.
+After login, the session is stored in sessionStorage and shared with map.html.
+Navigating to map.html without a session redirects back to the login screen.
 
 Sign Out clears the session on both pages.
 
@@ -140,11 +141,11 @@ Protected API endpoints require the header: `X-Teacher-ID: <id_number>`
 
 | Table      | Primary Key | Notes |
 |------------|-------------|-------|
-| `teachers` | `id_number CHAR(9)` | No surrogate key — ID number is the PK |
-| `students`  | `id_number CHAR(9)` | No surrogate key — ID number is the PK |
-| `locations` | `id SERIAL` | Log table; kept surrogate PK as there is no natural PK |
+| teachers | id_number CHAR(9) | No surrogate key — ID number is the PK |
+| students | id_number CHAR(9) | No surrogate key — ID number is the PK |
+| locations | id SERIAL | Log table; kept surrogate PK as there is no natural PK |
 
-A teacher can only register students into their own class (`class_name` must match).
+A teacher can only register students into their own class (class_name must match).
 
 Coordinates are stored in DMS format (degrees, minutes, seconds) as separate integer columns and converted to decimal degrees on read.
 
@@ -208,7 +209,7 @@ Coordinates are stored in DMS format (degrees, minutes, seconds) as separate int
 ---
 
 ## Assumptions
-1. **Auth**: Header-based (`X-Teacher-ID`) + `sessionStorage` - intended for internal use only.
+1. **Auth**: Header-based (X-Teacher-ID) + sessionStorage - intended for internal use only.
 2. **Coordinates**: All coordinates are positive (Israel is N/E).
-3. **Teacher location**: Stored in server memory (`teacher_positions` dict), resets on server restart.
+3. **Teacher location**: Stored in server memory (teacher_positions dict), resets on server restart.
 4. **Class restriction**: A teacher can only register students to their own class.
