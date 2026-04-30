@@ -67,7 +67,7 @@ Server runs at `http://localhost:5000`
 ### 6. (Optional) Seed sample data
 With the server running, in a separate terminal:
 ```bash
-server\venv\Scripts\python.exe scripts\seed_data.py
+server\venv\Scripts\python.exe scripts\seed_db.py
 ```
 Seeds 3 teachers (classes 6A/6B/6C), 12 students, and 12 locations.  
 Default teacher login ID: **310310310**

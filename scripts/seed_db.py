@@ -1,19 +1,6 @@
-import urllib.request, json, sys, io
+import requests
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-
-BASE = "http://localhost:5000"
-AUTH = "310310310"
-
-def post(path, body, headers={}):
-    headers["Content-Type"] = "application/json"
-    req = urllib.request.Request(f"{BASE}{path}", json.dumps(body).encode(), headers, method="POST")
-    try:
-        with urllib.request.urlopen(req) as r: return json.loads(r.read()), r.status
-    except urllib.error.HTTPError as e: return json.loads(e.read()), e.code
-
-def dms(t): return {"Degrees": str(t[0]), "Minutes": str(t[1]), "Seconds": str(t[2])}
-def log(r, status): print(f"  {status}: {r.get('message') or r.get('error')}")
+SERVER_URL = "http://localhost:5000"
 
 teachers = [
     {"first_name": "Sarah",  "last_name": "Levi",      "id_number": "310310310", "class_name": "6A"},
@@ -52,16 +39,35 @@ locations = [
     (333333334, (31,46,56), (35,13,56), "2026-04-22T08:11:00Z"),
 ]
 
-print("=== Registering teachers ===")
-for t in teachers: log(*post("/api/teachers", t))
+# POST request function
+def post_request(endpoint, data, headers=None):
+    url = f"{SERVER_URL}{endpoint}"
+    try:
+        response = requests.post(url, json=data, headers=headers)
+        return response.status_code, response.json()
+    except Exception as e:
+        return 500, {"error": str(e)}
 
-print("\n=== Registering students ===")
-for s in students:
-    teacher_id = next(t["id_number"] for t in teachers if t["class_name"] == s["class_name"])
-    log(*post("/api/students", s, {"X-Teacher-ID": teacher_id}))
+# --- Helper functions ---
+def dms(t): 
+    return {"Degrees": str(t[0]), "Minutes": str(t[1]), "Seconds": str(t[2])}
 
-print("\n=== Sending locations ===")
-for sid, lat, lon, t in locations:
-    log(*post("/api/location", {"ID": sid, "Coordinates": {"Longitude": dms(lon), "Latitude": dms(lat)}, "Time": t}))
+def log(r, status): 
+    print(f"  {status}: {r.get('message') or r.get('error')}")
 
-print(f"\n[DONE] Map: http://localhost:8080/map.html  |  Teacher ID: {AUTH}")
+if __name__ == "__main__":
+
+    print("=== Registering teachers ===")
+    for t in teachers: 
+        log(*post_request("/api/teachers", t))
+
+    print("\n=== Registering students ===")
+    for s in students:
+        teacher_id = next(t["id_number"] for t in teachers if t["class_name"] == s["class_name"])
+        log(*post_request("/api/students", s, {"X-Teacher-ID": teacher_id}))
+
+    print("\n=== Sending locations ===")
+    for sid, lat, lon, t in locations:
+        log(*post_request("/api/location", {"ID": sid, "Coordinates": {"Longitude": dms(lon), "Latitude": dms(lat)}, "Time": t}))
+
+    print(f"\n[DONE]")

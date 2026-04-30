@@ -2,11 +2,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2, os, math
 from datetime import datetime
-from pathlib import Path
 from dotenv import load_dotenv
 from functools import wraps
 
-load_dotenv(dotenv_path=Path(__file__).parent / ".env")
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -14,44 +13,56 @@ CORS(app)
 teacher_positions = {}
 
 
-def db():
+# --- DB Functions ---
+
+def db_connection():
     return psycopg2.connect(
-        host=os.getenv("DB_HOST"), port=os.getenv("DB_PORT"),
-        dbname=os.getenv("DB_NAME"), user=os.getenv("DB_USER"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD")
     )
 
-
 def query(sql, params=(), one=False):
-    conn = db(); cur = conn.cursor()
-    cur.execute(sql, params)
-    row = cur.fetchone() if one else cur.fetchall()
-    cur.close(); conn.close()
-    return row
-
+    try:
+        with db_connection() as c:
+            with c.cursor() as cur:
+                cur.execute(sql, params)
+                if one:
+                    return cur.fetchone()
+                return cur.fetchall()
+    except Exception as e:
+        print(f"Database Query Error: {e}")
+        return None
 
 def insert(table, fields, values):
-    conn = db(); cur = conn.cursor()
     ph = ",".join(["%s"] * len(values))
     try:
-        cur.execute(f"INSERT INTO {table}({','.join(fields)}) VALUES({ph})", values)
-        conn.commit()
+        with db_connection() as c:
+            with c.cursor() as cur:
+                cur.execute(f"INSERT INTO {table} ({','.join(fields)}) VALUES ({ph})", values)
+                c.commit()
     except Exception as e:
-        conn.rollback(); raise e
-    finally:
-        cur.close(); conn.close()
+        raise   
 
+
+# --- Helper Functions ---
 
 def person_row(r):
     return {"first_name": r[0], "last_name": r[1], "id_number": r[2], "class_name": r[3]}
 
+def loc_row(r):
+    return {"id_number": r[0], "first_name": r[1], "last_name": r[2], "class_name": r[3], 
+            "longitude": float(r[4]) + r[5]/60 + r[6]/3600, 
+            "latitude":  float(r[7]) + r[8]/60 + r[9]/3600, 
+            "recorded_at": (r[10].isoformat() + "+00:00") if r[10] else None    }
 
 def validate_id(val):
     v = str(val).strip()
     if not v.isdigit() or len(v) != 9:
         raise ValueError("ID number must be exactly 9 digits")
     return v
-
 
 def parse_coords(coords):
     if not isinstance(coords, dict): raise ValueError("Invalid coordinates")
@@ -63,12 +74,10 @@ def parse_coords(coords):
         return float(d) + m / 60 + s / 3600
     return dms(coords.get("Latitude"), 90, "Latitude"), dms(coords.get("Longitude"), 180, "Longitude")
 
-
 def haversine(lat1, lon1, lat2, lon2):
     lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
     a = math.sin((lat2-lat1)/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin((lon2-lon1)/2)**2
     return 6371 * 2 * math.asin(math.sqrt(a))
-
 
 def auth_required(fn):
     @wraps(fn)
@@ -79,16 +88,13 @@ def auth_required(fn):
         return fn(*args, **kwargs)
     return wrapper
 
-
 def json_body():
     data = request.get_json(silent=True)
     if not isinstance(data, dict): raise ValueError("Invalid JSON")
     return data
 
-
 def handle_insert_error(e):
     return (jsonify({"error": "ID number already registered"}), 409) if "23505" in str(e) else (jsonify({"error": str(e)}), 500)
-
 
 LOCATION_QUERY = """
     SELECT DISTINCT ON (l.student_id_number)
@@ -100,24 +106,16 @@ LOCATION_QUERY = """
     ORDER BY l.student_id_number, l.recorded_at DESC
 """
 
-def loc_row(r):
-    return {
-        "id_number": r[0], "first_name": r[1], "last_name": r[2], "class_name": r[3],
-        "longitude": float(r[4]) + r[5]/60 + r[6]/3600,
-        "latitude":  float(r[7]) + r[8]/60 + r[9]/3600,
-        "recorded_at": (r[10].isoformat() + "+00:00") if r[10] else None
-    }
-
 
 # --- Teachers ---
 
 @app.route("/api/teachers", methods=["POST"])
 def register_teacher():
-    data = request.get_json()
-    for f in ["first_name", "last_name", "id_number", "class_name"]:
-        if not str(data.get(f, "")).strip():
-            return jsonify({"error": f"Missing field: {f}"}), 400
-    try:
+    try: 
+        data = json_body()
+        for f in ["first_name", "last_name", "id_number", "class_name"]:
+            if not str(data.get(f, "")).strip():
+                return jsonify({"error": f"Missing field: {f}"}), 400
         id_num = validate_id(data["id_number"])
         insert("teachers", ["first_name","last_name","id_number","class_name"],
                (data["first_name"].strip(), data["last_name"].strip(), id_num, data["class_name"].strip()))
@@ -125,13 +123,11 @@ def register_teacher():
     except ValueError as e: return jsonify({"error": str(e)}), 400
     except Exception as e: return handle_insert_error(e)
 
-
 @app.route("/api/teachers/<id_number>", methods=["GET"])
 @auth_required
 def get_teacher(id_number):
     r = query("SELECT first_name,last_name,id_number,class_name FROM teachers WHERE id_number=%s", (id_number,), one=True)
     return jsonify(person_row(r)) if r else (jsonify({"error": "Teacher not found"}), 404)
-
 
 @app.route("/api/teachers/<id_number>/students", methods=["GET"])
 @auth_required
@@ -172,10 +168,9 @@ def register_student():
 
 @app.route("/api/location", methods=["POST"])
 def receive_location():
-    data = request.get_json(silent=True)
-    if not isinstance(data, dict): return jsonify({"error": "Invalid JSON"}), 400
     try:
-        sid = validate_id(str(data.get("ID", "")).strip().zfill(9))
+        data = json_body()
+        sid = validate_id(str(data.get("ID", "")).strip())
         coords = data.get("Coordinates")
         if not isinstance(coords, dict): return jsonify({"error": "Missing Coordinates"}), 400
         t_lat, t_lon = parse_coords(coords)
@@ -195,7 +190,6 @@ def receive_location():
         return jsonify({"message": "Location saved"}), 201
     except ValueError as e: return jsonify({"error": str(e)}), 400
 
-
 @app.route("/api/locations", methods=["GET"])
 @auth_required
 def get_latest_locations():
@@ -211,10 +205,9 @@ def update_teacher_position():
         data = json_body()
         t_lat, t_lon = parse_coords(data.get("Coordinates"))
         tid = request.headers.get("X-Teacher-ID")
-        teacher_positions[tid] = {"latitude": t_lat, "longitude": t_lon, "updated_at": datetime.utcnow().isoformat() + "Z"}
+        teacher_positions[tid] = {"latitude": t_lat, "longitude": t_lon, "updated_at": datetime.now().isoformat() + "Z"}
         return jsonify({"message": "Teacher location updated", "teacher_location": teacher_positions[tid]}), 200
     except ValueError as e: return jsonify({"error": str(e)}), 400
-
 
 @app.route("/api/location/teacher", methods=["POST"])
 @auth_required

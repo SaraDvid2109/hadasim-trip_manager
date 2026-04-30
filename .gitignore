@@ -6,7 +6,7 @@ __pycache__/
 venv/
 
 # Environment variables — do NOT commit to GitHub!
-server/.env
+.env
 
 # macOS
 .DS_Store

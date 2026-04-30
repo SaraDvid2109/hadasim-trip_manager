@@ -3,6 +3,7 @@
     "**/__pycache__": true,
     "**/venv": true,
     "**/*.pyc": true,
-    "**/.env": true
+    "**/.env": true,
+    "**/requirements.txt": true,
   }
 }
